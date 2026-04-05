@@ -3,7 +3,8 @@ global.DOMMatrix = class DOMMatrix {
 };
 
 const { Pool } = require('pg');
-const pdfParse = require('pdf-parse');
+const pdfParseLib = require('pdf-parse');
+const pdfParse = pdfParseLib.default || pdfParseLib;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -119,34 +120,127 @@ exports.handler = async (event, context) => {
       const body = JSON.parse(event.body);
       const archivos = body.archivos || [];
       const resultados = [];
+      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
       for (const archivo of archivos) {
         try {
-          const buffer = Buffer.from(archivo.contenido, 'base64');
-          const data = await pdfParse(buffer);
-          const texto = data.text;
-          const aseguradora = identificarAseguradora(texto);
-          const patron = patrones[aseguradora] || patrones.ASSA;
-          const prima = extraerNumero(texto, patron.prima);
-          const deducible = extraerNumero(texto, patron.deducible);
-          const responsabilidad_civil = extraerNumero(texto, patron.responsabilidad);
-          const t = texto.toLowerCase();
-          const resultado = {
-            aseguradora,
-            nombreArchivo: archivo.nombre,
-            prima: prima || 0,
-            deducible: deducible || 0,
-            responsabilidad_civil: responsabilidad_civil || 0,
-            coberturas: {
-              responsabilidadCivil: responsabilidad_civil > 0,
-              robo: t.includes('robo'),
-              colision: t.includes('colisi'),
-              cristales: t.includes('cristal'),
-              grua: t.includes('grua')
-            }
-          };
-          resultado.score = calcularScore(resultado);
-          resultados.push(resultado);
+          const prompt = `Sos un experto corredor de seguros vehiculares en Costa Rica con 20 años de experiencia. Tu trabajo es analizar cotizaciones de seguros y dar recomendaciones profesionales reales.
+
+IMPORTANTE: Este PDF puede contener uno o varios planes de cobertura. Si tiene múltiples planes, analizá TODOS y devolvelos como array.
+
+Analizá el PDF y extraé la información en este formato JSON exacto:
+
+[
+  {
+    "aseguradora": "nombre exacto de la aseguradora",
+    "plan": "nombre del plan si tiene (ej: Plan Básico, Plan Total, etc.) o null",
+    "prima_anual": número en colones sin símbolos,
+    "prima_mensual": número en colones (prima_anual/12 si no aparece),
+    "deducible": número en colones,
+    "responsabilidad_civil": número en colones,
+    "vigencia_desde": "fecha o null",
+    "vigencia_hasta": "fecha o null",
+    "coberturas": {
+      "colision_vuelco": true/false,
+      "robo_total": true/false,
+      "robo_parcial": true/false,
+      "cristales": true/false,
+      "grua": true/false,
+      "vehiculo_reemplazo": true/false,
+      "gastos_medicos_ocupantes": número en colones o 0,
+      "muerte_accidental": true/false,
+      "responsabilidad_civil_danos": número en colones o 0,
+      "responsabilidad_civil_lesiones": número en colones o 0,
+      "asistencia_vial": true/false,
+      "llanta_pinchada": true/false,
+      "cerrajeria": true/false,
+      "taxi_reemplazo": true/false
+    },
+    "exclusiones_importantes": ["lista de exclusiones relevantes que el cliente debe saber"],
+    "beneficios_destacados": ["lista de beneficios que diferencian esta opción"],
+    "comision_porcentaje": número o 15,
+    "numero_cotizacion": "número o null",
+    "analisis_ia": {
+      "fortalezas": ["2-3 puntos fuertes reales de esta cotización"],
+      "debilidades": ["2-3 puntos débiles o limitaciones reales"],
+      "perfil_ideal": "descripción del tipo de conductor/vehículo para quien es ideal esta opción",
+      "puntuacion_precio_valor": número del 1 al 10,
+      "puntuacion_cobertura": número del 1 al 10,
+      "puntuacion_servicio": número del 1 al 10,
+      "recomendacion": "explicación detallada de 2-3 oraciones de por qué elegir o no esta opción, con criterio profesional real"
+    }
+  }
+]
+
+REGLAS CRÍTICAS:
+1. Si el PDF tiene múltiples planes, devolvé UN objeto por cada plan
+2. Respondé SOLO con el JSON array, sin texto adicional ni markdown
+3. Basá el análisis en los datos REALES del PDF, no en suposiciones
+4. Las fortalezas y debilidades deben ser específicas y basadas en los datos reales
+5. Si un dato no aparece en el PDF, usá null o 0
+6. La recomendación debe ser honesta — si hay algo malo, decilo`;
+
+          const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 4096,
+              messages: [{
+                role: 'user',
+                content: [{
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: archivo.contenido
+                  }
+                }, {
+                  type: 'text',
+                  text: prompt
+                }]
+              }]
+            })
+          });
+
+          const aiData = await response.json();
+          if (!aiData.content || !aiData.content[0]) {
+            throw new Error('Claude no respondió: ' + JSON.stringify(aiData));
+          }
+          let texto = aiData.content[0].text.trim();
+          texto = texto.replace(/```json/g, '').replace(/```/g, '').trim();
+          
+          let parsed = JSON.parse(texto);
+          // Si Claude devuelve array de planes, procesarlos todos
+          const planes = Array.isArray(parsed) ? parsed : [parsed];
+          
+          for (const datos of planes) {
+            const resultado = {
+              aseguradora: datos.aseguradora || 'DESCONOCIDA',
+              nombreArchivo: archivo.nombre,
+              plan: datos.plan || null,
+              prima: datos.prima_anual || datos.prima || 0,
+              deducible: datos.deducible || 0,
+              responsabilidad_civil: datos.responsabilidad_civil || 0,
+              pago_mensual: datos.prima_mensual || Math.round((datos.prima_anual || datos.prima || 0) / 12),
+              vigencia: datos.vigencia_desde || '',
+              coberturas: datos.coberturas || {},
+              beneficios_adicionales: datos.beneficios_destacados || datos.beneficios_adicionales || [],
+              comision_porcentaje: datos.comision_porcentaje || 15,
+              numero_poliza: datos.numero_cotizacion || '',
+              analisis_ia: datos.analisis_ia || null,
+              exclusiones: datos.exclusiones_importantes || []
+            };
+            resultado.score = resultado.analisis_ia ? 
+              Math.round((resultado.analisis_ia.puntuacion_precio_valor + resultado.analisis_ia.puntuacion_cobertura + resultado.analisis_ia.puntuacion_servicio) / 3 * 10) :
+              calcularScore(resultado);
+            resultados.push(resultado);
+          }
+
         } catch (err) {
           resultados.push({ aseguradora: 'ERROR', nombreArchivo: archivo.nombre, error: err.message, prima: 0, score: 0 });
         }
