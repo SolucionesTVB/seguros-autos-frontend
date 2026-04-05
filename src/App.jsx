@@ -1206,12 +1206,6 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           {/* RECOMENDACION */}
                           {c.analisis_ia.recomendacion && <div style={{fontSize:'12px',color:'#334155',lineHeight:'1.6',marginBottom:'10px',padding:'8px 10px',background:'white',borderRadius:'6px',border:'1px solid #DBEAFE'}}>{c.analisis_ia.recomendacion}</div>}
 
-                          {/* FORTALEZAS Y DEBILIDADES */}
-                          <div style={{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'10px'}}>
-                            {(c.analisis_ia.fortalezas||[]).map((f,j) => <span key={j} style={{background:'#DCFCE7',color:'#166534',fontSize:'10px',padding:'4px 8px',borderRadius:'4px',fontWeight:'600'}}>✓ {f}</span>)}
-                            {(c.analisis_ia.debilidades||[]).map((d,j) => <span key={j} style={{background:'#FFF7ED',color:'#92400E',fontSize:'10px',padding:'4px 8px',borderRadius:'4px',fontWeight:'600'}}>⚠ {d}</span>)}
-                          </div>
-
                           {/* BRECHA DE PROTECCION */}
                           {c.analisis_ia.brecha_proteccion && (
                             <div style={{background:'#FFF1F2',border:'1px solid #FECDD3',borderRadius:'6px',padding:'8px 10px',marginBottom:'8px'}}>
@@ -1270,12 +1264,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                               <div style={{fontSize:'11px',color:'#0F172A',lineHeight:'1.4'}}>{intel.part}</div>
                             </div>
                           </div>
-                          {intel.excl?.length>0 && (
-                            <div style={{background:'#FFF1F2',borderRadius:'8px',padding:'10px',border:'1px solid #FECDD3'}}>
-                              <div style={{fontSize:'10px',fontWeight:'700',color:'#9F1239',marginBottom:'6px'}}>🚨 Exclusiones críticas — Advertir al cliente</div>
-                              {intel.excl.map((e,j) => <div key={j} style={{display:'flex',gap:'6px',fontSize:'11px',color:'#334155',marginBottom:'4px'}}><span style={{color:'#E11D48',flexShrink:0}}>•</span>{e}</div>)}
-                            </div>
-                          )}
+
                         </div>
                       )}
                     </div>
