@@ -348,6 +348,8 @@ export default function App() {
   const [procesando, setProcesando] = useState(false);
   const [progreso, setProgreso] = useState(0);
   const [toast, setToast] = useState(null);
+  const [expandido, setExpandido] = useState({});
+  const toggleExpandido = (i) => setExpandido(prev => ({...prev, [i]: !prev[i]}));
   const [cliente, setCliente] = useState(savedCliente || { nombre:'', cedula:'', telefono:'', email:'', marca:'', modelo:'', ano:'', placa:'', valorComercial:'' });
 
   const showToast = (msg, tipo='ok') => { setToast({msg,tipo}); setTimeout(() => setToast(null), 4000); };
@@ -613,7 +615,7 @@ Responde SOLO con el JSON array.`;
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,
         'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:8192,
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8192,
         messages:[{ role:'user', content:[
           { type:'document', source:{ type:'base64', media_type:'application/pdf', data:contenido } },
           { type:'text', text:prompt }
@@ -855,15 +857,23 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
     const beneficios = c.beneficios_sin_costo || c.extensiones_sin_costo || c.beneficios_adicionales || c.beneficios_destacados || [];
     const deduciblesDetalle = c.deducibles_por_riesgo || c.deducibles_por_cobertura || [];
     // Coberturas con punto de color
-    const coberturas = tipoSeguro === 'autos'
+    const dedsLabels = (c.deducibles_por_cobertura||c.deducibles_por_riesgo||[]).map(d=>(d.cobertura||d.riesgo||'').toLowerCase());
+      const enDeds = (kws) => kws.some(kw => dedsLabels.some(d=>d.includes(kw)));
+      const coberturas = tipoSeguro === 'autos'
       ? [
-          {nombre:'Colisión y vuelco', ok:!!c.coberturas?.colision_vuelco},
-          {nombre:'Robo total', ok:!!c.coberturas?.robo_total},
-          {nombre:'Cristales', ok:!!c.coberturas?.cristales},
-          {nombre:'Grúa 24/7', ok:!!c.coberturas?.grua},
-          {nombre:'Vehículo reemplazo', ok:!!c.coberturas?.vehiculo_reemplazo},
-          {nombre:'Muerte accidental', ok:!!c.coberturas?.muerte_accidental},
-        ]
+          {nombre:'Colisión y vuelco', ok:!!c.coberturas?.colision_vuelco||enDeds(['colisi','vuelco','daños directos'])},
+          {nombre:'Robo total', ok:!!c.coberturas?.robo_total||enDeds(['robo','hurto'])},
+          {nombre:'Cristales', ok:!!c.coberturas?.cristales||enDeds(['cristal','vidrio','rotura'])},
+          {nombre:'Muerte accidental', ok:!!c.coberturas?.muerte_accidental||enDeds(['muerte accidental'])},
+          {nombre:'Gastos legales', ok:!!c.coberturas?.gastos_legales||enDeds(['gastos legales','legal'])},
+          {nombre:'RC Alcohol', ok:!!c.coberturas?.rc_alcohol||enDeds(['alcohol'])},
+          {nombre:'Multiasistencia', ok:!!c.coberturas?.multiasistencia||enDeds(['multiasistencia','asistencia vial'])},
+          {nombre:'Riesgos adicionales', ok:!!c.coberturas?.riesgos_adicionales||enDeds(['riesgos adicionales','adicional'])||!!(c.coberturas?.robo_total&&(c.aseguradora||'').toLowerCase().includes('assa'))},
+          {nombre:'Pérdidas parciales', ok:!!c.coberturas?.perdidas_parciales||enDeds(['parciales'])},
+          {nombre:'Pérdidas totales', ok:!!c.coberturas?.perdidas_totales||enDeds(['totales'])},
+          {nombre:'Exención deducible', ok:!!c.coberturas?.exencion_deducible||enDeds(['exenci'])},
+          {nombre:'Atención médica', ok:!!(c.coberturas?.asistencia_medica_por_accidente||c.coberturas?.asistencia_medica_por_persona)||enDeds(['atenci','medica','funerarios'])},
+        ].filter(cob => cob.ok)
       : [
           {nombre:'Incendio', ok:!!c.cobertura_incendio},
           {nombre:'Terremoto', ok:!!c.cobertura_terremoto},
@@ -1139,7 +1149,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                   return (
                     <div key={i} style={{background:i===0?'#FFFDF5':'white',borderRadius:'14px',border:i===0?'1.5px solid #F59E0B':'1.5px solid #E2E8F0',marginBottom:'14px',overflow:'hidden'}}>
                       {/* HEADER */}
-                      <div style={{display:'flex',alignItems:'center',gap:'16px',padding:'18px 22px',borderBottom:'1px solid #F1F5F9'}}>
+                      <div onClick={() => toggleExpandido(i)} style={{display:'flex',alignItems:'center',gap:'16px',padding:'18px 22px',borderBottom:expandido[i]?'1px solid #F1F5F9':'none',cursor:'pointer',userSelect:'none'}}>
                         <div style={s.corLogo(color)}>{getInitials(c.aseguradora)}</div>
                         <div style={{flex:1}}>
                           <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
@@ -1150,6 +1160,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           <div style={{fontSize:'11px',color:'#94A3B8',marginTop:'2px'}}>{c.ref} {codigoSUGESE(c.aseguradora) && `· SUGESE: ${codigoSUGESE(c.aseguradora)}`}</div>
                         </div>
                         <div style={{textAlign:'center',minWidth:'80px'}}>
+                          <div style={{fontSize:'18px',color:'#94A3B8',marginBottom:'4px'}}>{expandido[i]?'▲':'▼'}</div>
                           <ScoreRing score={c.score} color={scoreColor} trackColor={trackColor} textColor={textColor}/>
                           <div style={{marginTop:'6px'}}>
                             <div style={s.comVal}>{c.comPct}%</div>
@@ -1159,6 +1170,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                         </div>
                       </div>
 
+                      {expandido[i] && <>
                       {/* MÉTRICAS FINANCIERAS */}
                       <div style={{display:'flex',gap:'0',borderBottom:'1px solid #F1F5F9',flexWrap:'wrap'}}>
                         {[
@@ -1266,6 +1278,8 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
 
                         </div>
                       )}
+                      </>
+                      }
                     </div>
                   );
                 })}
@@ -1309,6 +1323,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
             ) : (
               <>
                 <div style={{display:'flex',gap:'10px',marginBottom:'20px',flexWrap:'wrap'}}>
+
                   <button onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',background:'#DC2626',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>
                     📄 Exportar PDF
                   </button>
@@ -1478,9 +1493,12 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           <th style={{padding:'10px 12px',textAlign:'center'}}>Prima Anual</th>
                           <th style={{padding:'10px 12px',textAlign:'center'}}>Deducible</th>
                           {tipoSeguro==='autos' && <>
-                            <th style={{padding:'10px 12px',textAlign:'center'}}>RC Personas</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>RC Persona/Accidente</th>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Colisión</th>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Robo</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Multiasistencia</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Riesgos Adic.</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Asist. Carretera</th>
                           </>}
                           {tipoSeguro!=='autos' && <>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Suma Asegurada</th>
@@ -1502,9 +1520,20 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                             <td style={{padding:'10px 12px',textAlign:'center',fontWeight:'700',color:'#0F172A'}}>{fmtC(c.prima,c.moneda)}</td>
                             <td style={{padding:'10px 12px',textAlign:'center',color:'#334155'}}>{fmtC(c.deducible,c.moneda)}</td>
                             {tipoSeguro==='autos' && <>
-                              <td style={{padding:'10px 12px',textAlign:'center',color:'#334155'}}>{fmtC(c.coberturas?.responsabilidad_civil_lesiones||c.responsabilidad_civil||0,c.moneda)}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center',color:'#334155',fontSize:'10px'}}>
+                                {(() => {
+                                  const p = c.coberturas?.rc_personas_por_persona||0;
+                                  const a = c.coberturas?.rc_personas_por_accidente||c.coberturas?.responsabilidad_civil_lesiones||c.responsabilidad_civil||0;
+                                  if (p>0 && a>0 && p!==a) return <>{fmtC(p,c.moneda)}<br/>{fmtC(a,c.moneda)}</>;
+                                  if (a>0) return fmtC(a,c.moneda);
+                                  return '—';
+                                })()}
+                              </td>
                               <td style={{padding:'10px 12px',textAlign:'center'}}>{c.coberturas?.colision_vuelco?'✅':'❌'}</td>
                               <td style={{padding:'10px 12px',textAlign:'center'}}>{c.coberturas?.robo_total?'✅':'❌'}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{c.coberturas?.multiasistencia?'✅':'❌'}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{(c.coberturas?.riesgos_adicionales||(c.coberturas?.robo_total&&(c.aseguradora||'').toLowerCase().includes('assa')))?'✅':'❌'}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{(c.coberturas?.multiasistencia||c.coberturas?.asistencia_vial)?'✅':'❌'}</td>
                             </>}
                             {tipoSeguro!=='autos' && <>
                               <td style={{padding:'10px 12px',textAlign:'center',color:'#334155'}}>{fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total||0,c.moneda)}</td>
