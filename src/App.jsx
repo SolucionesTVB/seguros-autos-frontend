@@ -9,8 +9,6 @@ const fmtC = (n, moneda) => {
   const num = Number(n).toLocaleString('es-CR');
   const m = quitarTildes((moneda||'').toLowerCase());
   if (m==='usd'||m==='$'||m.includes('dol')) return `$${num}`;
-  const val = Number(n);
-  if (val > 0 && val < 50000) return `$${num}`;
   return `\u20a1${num}`;
 };
 
@@ -282,7 +280,8 @@ const generarPDF = async (cotizaciones, cliente, tipoSeguro) => {
       doc.setTextColor(30,64,175); doc.setFontSize(7); doc.setFont('helvetica','bold');
       doc.text('Criterio tecnico NOA:', margin, y); y += 4;
       doc.setFont('helvetica','normal'); doc.setTextColor(51,65,85);
-      const recTexto = (c.analisis_ia.recomendacion||'').substring(0,400).replace(/¡/g,'₡').replace(/¢/g,'₡').replace(/¡/g,'₡').replace(/¢/g,'₡');
+      const recRaw = (c.analisis_ia.recomendacion||'').replace(/[\u00a1\u2762]/g,'').replace(/¡/g,'').replace(/¢/g,'CRC ').replace(/₡/g,'CRC ');
+      const recTexto = recRaw.length > 380 ? (recRaw.lastIndexOf('. ', 380) > 100 ? recRaw.substring(0, recRaw.lastIndexOf('. ', 380)+1) : recRaw.substring(0,380)) : recRaw;
       const lines = doc.splitTextToSize(recTexto, W-margin*2);
       lines.forEach(line => {
         if (y > 270) { doc.addPage(); y = 15; }
@@ -407,7 +406,7 @@ ESTRUCTURA DE PDFs POR ASEGURADORA:
 ASSA: 3 planes (Platino/Dorado/Economico). Coberturas: Lesiones corporales por persona Y accidente, Daños a terceros, Asistencia medica, Comprensivo (robo/hurto), Colision o vuelco. Pagina 2: beneficios incluidos (muerte accidental, gastos funerarios, robo articulos, alquiler auto). GENERA 3 JSONs.
 INS: Codigos 17A=RC Lesion/Muerte, 17B=Serv.Medic, 17C=RC Daños Propiedad, 17D=Colision/Vuelco, 17E=Gastos Legales, 17F=Robo/Hurto, 17H=Riesgos Adicionales, 17M=Multiasistencia, 17N=Exencion Deducible, IDD=Indemnizacion Deducible. GENERA 1 JSON.
 MNK: TABLA 1-COBERTURAS: CHECK=SI INCLUYE, RAYA=NO INCLUYE. TABLA 2-DEDUCIBLES: solo incluye coberturas que tenian CHECK en tabla 1. A3=RC LUC (personas+bienes juntos), B=Atencion Medica, C=RC Alcohol, DA=Perdidas Parciales, DB=Perdidas Totales, G1=Multiasistencia, D=Colision/Vuelco, F=Robo/Hurto, H=Riesgos Adicionales. GENERA 1 JSON.
-Qualitas: Llaman "Daños Materiales" a lo que otras aseguradoras llaman Colision y Vuelco — son la MISMA cobertura. Si el PDF de Qualitas tiene "Daños Materiales" activo, colision_vuelco=true. RC Personas se llama "Responsabilidad Civil" — captura ese monto en rc_personas_por_persona Y rc_personas_por_accidente. GENERA 1 JSON.
+Qualitas: Estructura de coberturas: Item 1=Daños Materiales (=colision_vuelco), Item 1.1=Rotura Cristales (=cristales), Item 2=Robo Total, Item 3.1=RC Personas Alcohol, Item 3.2=RC Bienes Alcohol, Item 3.3=Responsabilidad Civil Complementaria (=RC Personas principal — captura este monto en rc_personas_por_persona Y rc_personas_por_accidente), Item 4=Gastos Legales, Item 5=Gastos Medicos Ocupantes (=asistencia_medica), Item 10=BIS RC Daños Ocupantes, Item 13=Robo Parcial, Item 15=Asistencia Vial. RC Daños Terceros usa el monto de RC Bienes (Item 3.2). GENERA 1 JSON.
 
 REGLAS CRITICAS:
 1. Prima: TOTAL ANUAL con IVA. Rango 150000-1500000 colones.
