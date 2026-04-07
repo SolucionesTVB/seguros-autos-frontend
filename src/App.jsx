@@ -350,6 +350,8 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [expandido, setExpandido] = useState({});
   const toggleExpandido = (i) => setExpandido(prev => ({...prev, [i]: !prev[i]}));
+  const [verRecomendacion, setVerRecomendacion] = useState(false);
+  const [verComparativo, setVerComparativo] = useState(false);
   const [cliente, setCliente] = useState(savedCliente || { nombre:'', cedula:'', telefono:'', email:'', marca:'', modelo:'', ano:'', placa:'', valorComercial:'' });
 
   const showToast = (msg, tipo='ok') => { setToast({msg,tipo}); setTimeout(() => setToast(null), 4000); };
@@ -1369,8 +1371,12 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                     </div>
                   </div>
                   {/* RECOMENDACION */}
-                  <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:'12px',padding:'20px',marginBottom:'24px'}}>
-                    <h3 style={{fontWeight:'800',color:'#166534',fontSize:'15px',marginBottom:'8px'}}>💡 Recomendación NOA: {mejor.aseguradora}{mejor.plan?` — ${mejor.plan}`:''}</h3>
+                  <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:'12px',marginBottom:'24px',overflow:'hidden'}}>
+                    <div onClick={() => setVerRecomendacion(!verRecomendacion)} style={{padding:'16px 20px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <h3 style={{fontWeight:'800',color:'#166534',fontSize:'15px',margin:0}}>💡 Recomendación NOA: {mejor.aseguradora}{mejor.plan?` — ${mejor.plan}`:''}</h3>
+                      <span style={{color:'#166534',fontSize:'18px'}}>{verRecomendacion?'▲':'▼'}</span>
+                    </div>
+                    {verRecomendacion && <div style={{padding:'0 20px 20px'}}>
                     <p style={{fontSize:'13px',color:'#334155',marginBottom:'12px',lineHeight:'1.6'}}>{mejor.analisis_ia?.recomendacion||'Mejor relación precio-cobertura del mercado.'}</p>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px'}}>
                       {[['Prima Anual',fmtC(mejor.prima,mejor.moneda)],['Deducible',fmtC(mejor.deducible,mejor.moneda)],['Score NOA',`${mejor.score}/100`]].map(([l,v]) => (
@@ -1380,9 +1386,10 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                         </div>
                       ))}
                     </div>
-                  </div>
+                    </div>}
+                    {verRecomendacion && <>
                   {/* TARJETAS CLIENTE */}
-                  <div style={{marginBottom:'24px'}}>
+                  <div style={{marginBottom:'24px',paddingTop:'16px'}}>
                     <h3 style={{fontSize:'12px',fontWeight:'700',color:'#64748B',textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:'12px'}}>Detalle por aseguradora — Para el cliente</h3>
                     <div style={s.cliGrid}>
                       {cotizaciones.map((c,i) => {
@@ -1482,10 +1489,16 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                       })}
                     </div>
                   </div>
+                  </>}
+                  </div>
 
                   {/* TABLA */}
                   <div style={{marginBottom:'24px',overflowX:'auto'}}>
-                    <h3 style={{fontSize:'12px',fontWeight:'700',color:'#64748B',textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:'12px'}}>📊 Comparativo completo (precios con IVA)</h3>
+                    <div onClick={() => setVerComparativo(!verComparativo)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',marginBottom:'12px'}}>
+                      <h3 style={{fontSize:'12px',fontWeight:'700',color:'#64748B',textTransform:'uppercase',letterSpacing:'0.8px',margin:0}}>📊 Comparativo completo (precios con IVA)</h3>
+                      <span style={{color:'#64748B',fontSize:'16px'}}>{verComparativo?'▲':'▼'}</span>
+                    </div>
+                    {verComparativo && <>
                     <table style={{width:'100%',fontSize:'12px',borderCollapse:'collapse'}}>
                       <thead>
                         <tr style={{background:'#1E3A8A',color:'white'}}>
@@ -1547,6 +1560,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                         ))}
                       </tbody>
                     </table>
+                    </>}
                   </div>
                   {/* FIRMAS */}
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'32px',borderTop:'1px solid #E2E8F0',paddingTop:'20px',marginBottom:'16px'}}>
