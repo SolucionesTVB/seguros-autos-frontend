@@ -524,7 +524,19 @@ Retorna UN array JSON:
   "documentos_para_reclamar":["max 3 documentos"],
   "numero_cotizacion":"codigo",
   "vigencia":"periodo",
-  "analisis_ia":{"recomendacion":"2-3 oraciones","fortalezas":["lista"],"debilidades":["lista"],"perfil_ideal":"texto","precio_valor":1-10,"cobertura_score":1-10,"servicio_score":1-10},
+  "analisis_ia":{
+    "recomendacion":"2-3 oraciones directas sobre este plan de hogar especifico",
+    "fortalezas":["punto fuerte CON MONTO real","segundo punto fuerte"],
+    "debilidades":["limitacion real CON IMPACTO en colones","segunda debilidad"],
+    "brecha_proteccion":"que riesgo del hogar queda desprotegido y cuanto podria costar",
+    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
+    "perfil_si":"para quien SI es ideal este plan con razon concreta",
+    "perfil_no":"para quien NO es con razon concreta",
+    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de seguro de hogar",
+    "precio_valor":1-10,
+    "puntuacion_cobertura":1-10,
+    "puntuacion_servicio":1-10
+  },
   "comision_porcentaje":numero
 }]
 Responde SOLO con el array JSON.`,
@@ -542,8 +554,19 @@ Retorna UN array JSON:
   "documentos_para_reclamar":["max 3 documentos principales que pide la aseguradora para reclamar, en lenguaje simple"],
   "exclusiones":["max 3 exclusiones principales en lenguaje simple"],
   "comision_porcentaje":numero,"numero_cotizacion":"codigo","vigencia":"periodo",
-  "analisis_ia":{"recomendacion":"texto","fortalezas":["lista"],"debilidades":["lista"],
-    "perfil_ideal":"texto","precio_valor":1-10,"cobertura_score":1-10,"servicio_score":1-10}
+  "analisis_ia":{
+    "recomendacion":"2-3 oraciones directas sobre este plan comercial",
+    "fortalezas":["punto fuerte CON MONTO real","segundo punto fuerte"],
+    "debilidades":["limitacion real CON IMPACTO en colones","segunda debilidad"],
+    "brecha_proteccion":"que riesgo comercial queda desprotegido y cuanto podria costar",
+    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
+    "perfil_si":"para quien SI es ideal este plan con razon concreta",
+    "perfil_no":"para quien NO es con razon concreta",
+    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de seguro comercial",
+    "precio_valor":1-10,
+    "puntuacion_cobertura":1-10,
+    "puntuacion_servicio":1-10
+  }
 }]
 Responde SOLO con el array JSON.`,
       todo_riesgo: `Sos un experto corredor de seguros en Costa Rica. Analiza este PDF de TODO RIESGO. ${basePrompt}
@@ -881,9 +904,10 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
           {nombre:'Terremoto', ok:!!c.cobertura_terremoto},
           {nombre:'Huracán', ok:!!c.cobertura_huracan},
           {nombre:'Inundación', ok:!!c.cobertura_inundacion},
-          {nombre:'Robo', ok:!!c.cobertura_robo},
+          {nombre:'Robo de contenido', ok:!!c.cobertura_robo},
           {nombre:'Cristales', ok:!!(c.cobertura_robo||c.coberturas?.cristales)},
-        ];
+          {nombre:'Responsabilidad civil', ok:!!(c.responsabilidad_civil>0)},
+        ].filter(cob => cob.ok);
     // Rubros asegurados
     const rubros = (() => {
       if (tipoSeguro==='autos') {
@@ -916,7 +940,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
     // Deducibles en lenguaje simple
     const deducibles = (() => {
       if (deduciblesDetalle.length > 0) {
-        return deduciblesDetalle.map(d => ({riesgo: d.tipo_riesgo || d.cobertura, valor: d.deducible}));
+        return deduciblesDetalle.map(d => ({riesgo: d.riesgo || d.tipo_riesgo || d.cobertura, valor: d.deducible}));
       }
       if (c.deducible_porcentaje_catastrofico > 0) {
         return [
@@ -1180,7 +1204,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           tipoSeguro==='autos'&&c.valor_vehiculo?{l:'Valor vehículo', v:fmtC(c.valor_vehiculo,c.moneda), s:'Suma asegurada'}:null,
                           esLUC?{l:'RC Límite Único (LUC)', v:fmtC(rcAccidente,c.moneda), s:'Personas + bienes'}:rcAccidente>0&&rcPersona>0&&rcPersona!==rcAccidente?{l:'RC Personas', v:fmtC(rcPersona,c.moneda)+' /persona', s:fmtC(rcAccidente,c.moneda)+' /accidente'}:rcAccidente>0?{l:'RC Personas', v:fmtC(rcAccidente,c.moneda), s:'Por accidente'}:null,
                           !esLUC&&rcDanos>0?{l:'RC Daños Terceros', v:fmtC(rcDanos,c.moneda), s:'Propiedad terceros'}:null,
-                          (c.suma_asegurada_edificio||c.suma_asegurada_total)&&tipoSeguro!=='autos'?{l:'Suma asegurada', v:fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total,c.moneda), s:null}:null,
+                          (c.suma_asegurada_edificio||c.suma_asegurada_total)&&tipoSeguro!=='autos'?{l:'Suma asegurada', v:fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total,c.moneda), s:c.suma_asegurada_contenido>0?`+${fmtC(c.suma_asegurada_contenido,c.moneda)} contenido`:null}:null,
                         ].filter(Boolean).map((m,j) => (
                           <div key={j} style={{padding:'14px 18px',borderRight:'1px solid #F1F5F9',minWidth:'140px',flex:1}}>
                             <div style={s.mLabel}>{m.l}</div>
@@ -1515,7 +1539,10 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           </>}
                           {tipoSeguro!=='autos' && <>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Suma Asegurada</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Incendio</th>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Terremoto</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Huracán</th>
+                            <th style={{padding:'10px 12px',textAlign:'center'}}>Inundación</th>
                             <th style={{padding:'10px 12px',textAlign:'center'}}>Robo</th>
                           </>}
                           <th style={{padding:'10px 12px',textAlign:'center',borderRadius:'0 8px 0 0'}}>Score</th>
@@ -1549,8 +1576,15 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                               <td style={{padding:'10px 12px',textAlign:'center'}}>{(c.coberturas?.multiasistencia||c.coberturas?.asistencia_vial)?'✅':'❌'}</td>
                             </>}
                             {tipoSeguro!=='autos' && <>
-                              <td style={{padding:'10px 12px',textAlign:'center',color:'#334155'}}>{fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total||0,c.moneda)}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center',color:'#334155',fontSize:'10px'}}>
+                                {c.suma_asegurada_edificio>0&&c.suma_asegurada_contenido>0
+                                  ? <>{fmtC(c.suma_asegurada_edificio,c.moneda)}<br/><span style={{color:'#64748B'}}>+{fmtC(c.suma_asegurada_contenido,c.moneda)} contenido</span></>
+                                  : fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total||0,c.moneda)}
+                              </td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{c.cobertura_incendio?'✅':'❌'}</td>
                               <td style={{padding:'10px 12px',textAlign:'center'}}>{c.cobertura_terremoto?'✅':'❌'}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{c.cobertura_huracan?'✅':'❌'}</td>
+                              <td style={{padding:'10px 12px',textAlign:'center'}}>{c.cobertura_inundacion?'✅':'❌'}</td>
                               <td style={{padding:'10px 12px',textAlign:'center'}}>{c.cobertura_robo?'✅':'❌'}</td>
                             </>}
                             <td style={{padding:'10px 12px',textAlign:'center'}}>
