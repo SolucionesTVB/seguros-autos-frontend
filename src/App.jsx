@@ -493,7 +493,11 @@ CONOCIMIENTO CLAVE DEL MERCADO CR:
    - CONTENIDO/MENAJE: INS=Cobertura Y, LAFISE=Cobertura C "Daños a la propiedad personal y/o menaje", ASSA=Contenido, MNK=Menaje. Mapea a suma_asegurada_contenido.
    - TERREMOTO/CONVULSIONES: INS=Cobertura D, LAFISE=Cobertura B, todos los demas similar. Mapea a cobertura_terremoto=true.
    - ROBO DE CONTENIDO: INS=Cobertura Y incluye robo, LAFISE=Cobertura D "Robo", MNK=incluido. Mapea a cobertura_robo=true.
-   - CRISTALES: LAFISE=Cobertura E, otros similar. Incluir en beneficios si aplica.
+   - CRISTALES/VIDRIOS: LAFISE=Cobertura E, MNK=Cobertura F "Rotura de Vidrios". Mapea a cobertura_cristales=true.
+   - TUBERIAS: MNK=Cobertura D "Daños en Tuberías y Similares". Incluir en beneficios_sin_costo.
+   - MULTIASISTENCIA: MNK=Cobertura L "Multiasistencia Residencial". Incluir en beneficios_sin_costo.
+   - MOTIN/DISTURBIOS: MNK=Cobertura E. Incluir en beneficios si aplica.
+   - MNK HOGAR usa letras A-F y L para sus coberturas — identificalas correctamente.
    - HURACAN/INUNDACION: generalmente incluido en cobertura basica. Mapea a cobertura_huracan y cobertura_inundacion.
 
 3. DEDUCIBLES tienen nombres diferentes pero significan lo mismo:
@@ -527,6 +531,9 @@ Retorna UN array JSON:
   "cobertura_huracan":true/false,
   "cobertura_inundacion":true/false,
   "cobertura_robo":true/false,
+  "cobertura_cristales":true/false,
+  "cobertura_multiasistencia":true/false,
+  "cobertura_tuberias":true/false,
   "deducibles_por_riesgo":[{
     "riesgo":"Incendio / Huracan / Inundacion / Robo / Catastrofico / No catastrofico / etc",
     "deducible":"Sin deducible / $1000 fijo / 1% minimo $1000 / 10% minimo $100"
@@ -554,29 +561,61 @@ Retorna UN array JSON:
   "comision_porcentaje":numero
 }]
 Responde SOLO con el array JSON.`,
-      incendio_comercial: `Sos un experto corredor de seguros en Costa Rica. Analiza este PDF de INCENDIO COMERCIAL. ${basePrompt}
-SUMA todas las coberturas para prima_anual total con IVA.
+      incendio_comercial: `Sos un experto corredor de seguros en Costa Rica con 20 años de experiencia. Analiza este PDF de INCENDIO COMERCIAL. ${basePrompt}
+
+CONOCIMIENTO CLAVE INCENDIO COMERCIAL CR:
+1. PRIMA: SUMA todas las coberturas/rubros para prima_anual TOTAL con IVA incluido.
+2. RUBROS ASEGURADOS — en comercial los bienes se dividen asi:
+   - Edificio/Estructura: el inmueble fisico
+   - Mercaderia/Inventario: productos, repuestos, existencias para venta
+   - Maquinaria/Equipo: equipos de produccion o trabajo
+   - Mobiliario/Contenido: muebles y equipo de oficina
+   Captura cada rubro por separado en su campo correspondiente.
+3. COBERTURAS — cada aseguradora las nombra diferente:
+   - INS: A=Incendio/Rayo, B=Riesgos Varios, C=Inundacion/Deslizamiento/Vientos, D=Convulsiones Naturaleza, G=Lluvia/Derrame
+   - LAFISE: A1=Daño directo, B1=Riesgos naturaleza, C1=Inundacion/deslizamiento/vientos, D1=Riesgos diversos, E1=Lluvia/derrame
+   - ASSA/MNK: estructura similar con letras propias
+   Identifica el riesgo cubierto sin importar la letra que use la aseguradora.
+4. DEDUCIBLES: captura por cobertura con descripcion clara en lenguaje simple.
+5. BASE INDEMNIZACION: "Valor de Reposicion" si menor o igual a 15 anos, "Valor Real Efectivo" si mayor a 15 anos.
+
 Retorna UN array JSON:
 [{
-  "aseguradora":"nombre oficial","plan":"nombre","moneda":"USD o CRC",
-  "prima_anual":numero TOTAL con IVA,"deducible":numero,
-  "suma_asegurada_total":numero,"suma_asegurada_edificio":numero,"suma_asegurada_contenido":numero,
-  "coberturas_detalle":[{"codigo":"letra","descripcion":"nombre","prima":numero,"deducible":"descripcion"}],
-  "cobertura_incendio":true/false,"cobertura_terremoto":true/false,"cobertura_huracan":true/false,
-  "cobertura_inundacion":true/false,"cobertura_robo":true/false,"perdida_beneficios":true/false,
-  "responsabilidad_civil":numero,"base_indemnizacion":"valor real o valor de reposicion",
-  "documentos_para_reclamar":["max 3 documentos principales que pide la aseguradora para reclamar, en lenguaje simple"],
-  "exclusiones":["max 3 exclusiones principales en lenguaje simple"],
-  "comision_porcentaje":numero,"numero_cotizacion":"codigo","vigencia":"periodo",
+  "aseguradora":"nombre oficial",
+  "plan":"nombre del plan",
+  "moneda":"USD o CRC",
+  "prima_anual":numero TOTAL con IVA,
+  "suma_asegurada_total":numero,
+  "suma_asegurada_edificio":numero o 0,
+  "suma_asegurada_mercaderia":numero o 0,
+  "suma_asegurada_maquinaria":numero o 0,
+  "suma_asegurada_mobiliario":numero o 0,
+  "base_indemnizacion":"Valor de Reposicion o Valor Real Efectivo",
+  "cobertura_incendio":true/false,
+  "cobertura_terremoto":true/false,
+  "cobertura_huracan":true/false,
+  "cobertura_inundacion":true/false,
+  "cobertura_robo":true/false,
+  "cobertura_lluvia_derrame":true/false,
+  "perdida_beneficios":true/false,
+  "responsabilidad_civil":numero o 0,
+  "coberturas_detalle":[{"codigo":"letra","descripcion":"nombre claro","prima":numero,"deducible":"descripcion simple"}],
+  "deducibles_por_riesgo":[{"riesgo":"nombre","deducible":"descripcion simple"}],
+  "exclusiones":["max 3 exclusiones criticas en lenguaje simple"],
+  "documentos_para_reclamar":["max 3 documentos"],
+  "beneficios_sin_costo":["clausulas adicionales sin costo extra"],
+  "comision_porcentaje":numero,
+  "numero_cotizacion":"codigo",
+  "vigencia":"periodo",
   "analisis_ia":{
-    "recomendacion":"2-3 oraciones directas sobre este plan comercial",
-    "fortalezas":["punto fuerte CON MONTO real","segundo punto fuerte"],
+    "recomendacion":"2-3 oraciones directas sobre este plan para este negocio especifico",
+    "fortalezas":["punto fuerte CON MONTO real del PDF","segundo punto fuerte"],
     "debilidades":["limitacion real CON IMPACTO en colones","segunda debilidad"],
     "brecha_proteccion":"que riesgo comercial queda desprotegido y cuanto podria costar",
-    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
-    "perfil_si":"para quien SI es ideal este plan con razon concreta",
-    "perfil_no":"para quien NO es con razon concreta",
-    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de seguro comercial",
+    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente antes de firmar",
+    "perfil_si":"para que tipo de negocio SI es ideal este plan",
+    "perfil_no":"para que tipo de negocio NO es ideal",
+    "vs_mercado":"como se compara precio y cobertura vs estandar del mercado CR para este tipo de negocio",
     "precio_valor":1-10,
     "puntuacion_cobertura":1-10,
     "puntuacion_servicio":1-10
@@ -913,15 +952,24 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
           {nombre:'Exención deducible', ok:!!c.coberturas?.exencion_deducible||enDeds(['exenci'])},
           {nombre:'Atención médica', ok:!!(c.coberturas?.asistencia_medica_por_accidente||c.coberturas?.asistencia_medica_por_persona)||enDeds(['atenci','medica','funerarios'])},
         ].filter(cob => cob.ok)
-      : [
-          {nombre:'Incendio', ok:!!c.cobertura_incendio},
-          {nombre:'Terremoto', ok:!!c.cobertura_terremoto},
-          {nombre:'Huracán', ok:!!c.cobertura_huracan},
-          {nombre:'Inundación', ok:!!c.cobertura_inundacion},
-          {nombre:'Robo de contenido', ok:!!c.cobertura_robo},
-          {nombre:'Cristales', ok:!!(c.cobertura_robo||c.coberturas?.cristales)},
-          {nombre:'Responsabilidad civil', ok:!!(c.responsabilidad_civil>0)},
-        ].filter(cob => cob.ok);
+      : (() => {
+          const deds = (c.deducibles_por_riesgo||c.deducibles_por_cobertura||[]).map(d=>(d.riesgo||d.cobertura||'').toLowerCase());
+          const bens = (c.beneficios_sin_costo||[]).join(' ').toLowerCase();
+          const enD = (kws) => kws.some(kw => deds.some(d=>d.includes(kw)));
+          const enB = (kws) => kws.some(kw => bens.includes(kw));
+          return [
+            {nombre:'Incendio', ok:!!c.cobertura_incendio},
+            {nombre:'Terremoto', ok:!!c.cobertura_terremoto},
+            {nombre:'Huracán', ok:!!c.cobertura_huracan||enD(['huracan','viento'])},
+            {nombre:'Inundación', ok:!!c.cobertura_inundacion||enD(['inundacion'])},
+            {nombre:'Robo de contenido', ok:!!c.cobertura_robo||enD(['robo','hurto'])},
+            {nombre:'Cristales / Vidrios', ok:!!(c.cobertura_cristales||c.coberturas?.cristales)||enD(['cristal','vidrio','rotura de vidrio'])},
+            {nombre:'Responsabilidad civil', ok:!!(c.responsabilidad_civil>0)},
+            {nombre:'Multiasistencia hogar', ok:!!(c.cobertura_multiasistencia||c.multiasistencia)||enD(['multiasistencia'])||enB(['multiasistencia'])},
+            {nombre:'Daños en tuberías', ok:!!(c.cobertura_tuberias)||enD(['tuberia','tuber'])},
+            {nombre:'Motín / Disturbios', ok:enD(['motin','disturbio','malicioso'])},
+          ].filter(cob => cob.ok);
+        })();
     // Rubros asegurados
     const rubros = (() => {
       if (tipoSeguro==='autos') {
@@ -945,9 +993,11 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
         return r;
       }
       const r = [];
-      if (c.suma_asegurada_edificio) r.push({nombre:'Edificio / Vivienda', monto: fmtC(c.suma_asegurada_edificio,c.moneda)});
+      if (c.suma_asegurada_edificio) r.push({nombre:tipoSeguro==='incendio_hogar'?'Edificio / Vivienda':'Edificio / Estructura', monto: fmtC(c.suma_asegurada_edificio,c.moneda)});
       if (c.suma_asegurada_contenido) r.push({nombre:'Contenido / Menaje', monto: fmtC(c.suma_asegurada_contenido,c.moneda)});
-      if (c.suma_asegurada_maquinaria) r.push({nombre:'Maquinaria', monto: fmtC(c.suma_asegurada_maquinaria,c.moneda)});
+      if (c.suma_asegurada_mercaderia) r.push({nombre:'Mercadería / Inventario', monto: fmtC(c.suma_asegurada_mercaderia,c.moneda)});
+      if (c.suma_asegurada_maquinaria) r.push({nombre:'Maquinaria / Equipo', monto: fmtC(c.suma_asegurada_maquinaria,c.moneda)});
+      if (c.suma_asegurada_mobiliario) r.push({nombre:'Mobiliario', monto: fmtC(c.suma_asegurada_mobiliario,c.moneda)});
       if (!r.length && c.suma_asegurada_total) r.push({nombre:'Total asegurado', monto: fmtC(c.suma_asegurada_total,c.moneda)});
       return r;
     })();
@@ -1451,15 +1501,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                               <div style={{fontSize:'11px',color:'#475569',marginTop:'4px'}}>{fmtC(c.mensual,c.moneda)} por mes · <strong style={{color:'#E2E8F0'}}>{info.baseInd}</strong> · {info.baseIndTexto}</div>
                             </div>
                             <div style={s.cliSection}>
-                              <div style={s.cliSectionTitle}>Qué está protegido</div>
-                              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px',marginBottom:info.rubros.length>0?'10px':'0'}}>
-                                {info.coberturas.filter(cv=>cv.ok).map((cv,j) => (
-                                  <div key={j} style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                    <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#34D399',flexShrink:0}}/>
-                                    <span style={{fontSize:'12px',color:'#94A3B8'}}>{cv.nombre}</span>
-                                  </div>
-                                ))}
-                              </div>
+                              <div style={s.cliSectionTitle}>Coberturas y deducibles</div>
                               {info.rubros.length>0 && (
                                 <div style={s.cliRubroGrid}>
                                   {info.rubros.map((r,j) => (
@@ -1470,15 +1512,24 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                                   ))}
                                 </div>
                               )}
-                            </div>
-                            <div style={s.cliSection}>
-                              <div style={s.cliSectionTitle}>Cuánto pagás si algo pasa</div>
-                              {info.deducibles.map((d,j) => (
-                                <div key={j} style={{...s.cliDedRow,borderBottom:j===info.deducibles.length-1?'none':'0.5px solid #1E293B'}}>
-                                  <div style={{fontSize:'11px',color:'#64748B'}}>{d.riesgo}</div>
-                                  <div style={{fontSize:'11px',fontWeight:'600',color:d.valor==='Sin deducible'?'#34D399':'#E2E8F0',textAlign:'right',maxWidth:'55%'}}>{d.valor}</div>
-                                </div>
-                              ))}
+                              {info.deducibles.length>0 ? (
+                                info.deducibles.map((d,j) => (
+                                  <div key={j} style={{...s.cliDedRow,borderBottom:j===info.deducibles.length-1?'none':'0.5px solid #1E293B'}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                      <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#34D399',flexShrink:0}}/>
+                                      <span style={{fontSize:'11px',color:'#94A3B8'}}>{d.riesgo}</span>
+                                    </div>
+                                    <div style={{fontSize:'11px',fontWeight:'600',color:d.valor==='Sin deducible'?'#34D399':'#E2E8F0',textAlign:'right',maxWidth:'55%'}}>{d.valor}</div>
+                                  </div>
+                                ))
+                              ) : (
+                                info.coberturas.filter(cv=>cv.ok).map((cv,j) => (
+                                  <div key={j} style={{display:'flex',alignItems:'center',gap:'6px',padding:'4px 0'}}>
+                                    <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#34D399',flexShrink:0}}/>
+                                    <span style={{fontSize:'11px',color:'#94A3B8'}}>{cv.nombre}</span>
+                                  </div>
+                                ))
+                              )}
                             </div>
                             {info.beneficios.length>0 && (
                               <div style={s.cliSection}>
