@@ -487,16 +487,30 @@ Responde SOLO con el JSON array.`,
 
 CONOCIMIENTO CLAVE DEL MERCADO CR:
 1. PRIMA: Usá el TOTAL ANUAL con IVA. En tablas de formas de pago, tomá la fila "Anual". SOLO escribe "USD" o "CRC" en el campo moneda.
-2. DEDUCIBLES tienen nombres diferentes pero significan lo mismo:
+
+2. COBERTURAS — cada aseguradora las nombra diferente pero significan lo mismo:
+   - EDIFICIO/INMUEBLE: INS=Cobertura V, LAFISE=Cobertura A, ASSA=Edificio, MNK=Vivienda. Mapea a cobertura_incendio=true y suma_asegurada_edificio.
+   - CONTENIDO/MENAJE: INS=Cobertura Y, LAFISE=Cobertura C "Daños a la propiedad personal y/o menaje", ASSA=Contenido, MNK=Menaje. Mapea a suma_asegurada_contenido.
+   - TERREMOTO/CONVULSIONES: INS=Cobertura D, LAFISE=Cobertura B, todos los demas similar. Mapea a cobertura_terremoto=true.
+   - ROBO DE CONTENIDO: INS=Cobertura Y incluye robo, LAFISE=Cobertura D "Robo", MNK=incluido. Mapea a cobertura_robo=true.
+   - CRISTALES: LAFISE=Cobertura E, otros similar. Incluir en beneficios si aplica.
+   - HURACAN/INUNDACION: generalmente incluido en cobertura basica. Mapea a cobertura_huracan y cobertura_inundacion.
+
+3. DEDUCIBLES tienen nombres diferentes pero significan lo mismo:
    - INS llama "Participacion del Asegurado en la Perdida" al deducible. 0.00000% = SIN DEDUCIBLE.
    - MNK muestra deducible por cobertura: A (no catastróficas) y B (catastróficas).
+   - LAFISE y otros muestran deducible por cobertura con porcentaje o monto fijo.
    - Normaliza SIEMPRE al campo deducibles_por_riesgo con lenguaje simple para el cliente.
-3. BENEFICIOS EXTRA sin costo tienen nombres diferentes:
+
+4. BENEFICIOS EXTRA sin costo tienen nombres diferentes:
    - INS: "Extension de cobertura sin cargo adicional" (remocion escombros, gastos alquiler, etc.)
    - MNK: "Beneficios y Asistencias Basicos" F1-F5 (condominio, compra protegida, odontologia, multiasistencia)
+   - LAFISE: Asistencia en el Hogar, Remocion de Escombros incluidos
    - Normaliza SIEMPRE al campo beneficios_sin_costo con descripcion simple.
-4. BIENES: cada bien (VIVIENDA/EDIFICIO y MENAJE/CONTENIDO) tiene su propia suma asegurada.
-5. BASE VALORACION: "Reposicion" = pagan para comprar nuevo. "Real" = valor depreciado.
+
+5. BIENES: cada bien (VIVIENDA/EDIFICIO y MENAJE/CONTENIDO) tiene su propia suma asegurada. SIEMPRE captura ambos por separado.
+6. BASE VALORACION: "Reposicion" = pagan para comprar nuevo. "Real" = valor depreciado.
+7. Si ves solo una suma asegurada total sin desglose, ponla en suma_asegurada_edificio y deja suma_asegurada_contenido en 0.
 
 Retorna UN array JSON:
 [{
