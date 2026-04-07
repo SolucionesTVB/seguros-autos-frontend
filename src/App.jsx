@@ -622,22 +622,68 @@ Retorna UN array JSON:
   }
 }]
 Responde SOLO con el array JSON.`,
-      todo_riesgo: `Sos un experto corredor de seguros en Costa Rica. Analiza este PDF de TODO RIESGO. ${basePrompt}
+      todo_riesgo: `Sos un experto corredor de seguros en Costa Rica con 20 años de experiencia. Analiza este PDF de SEGURO TODO RIESGO COMERCIAL o MULTIRIESGO. ${basePrompt}
+
+CONOCIMIENTO CLAVE TODO RIESGO / MULTIRIESGO CR:
+1. PRIMA: usa el TOTAL ANUAL con IVA incluido.
+2. Este seguro cubre TODOS LOS RIESGOS excepto los expresamente excluidos — es diferente a incendio que cubre riesgos nombrados.
+3. COBERTURAS PRINCIPALES que pueden aparecer:
+   - Riesgos catastróficos: terremoto, erupción volcánica, tsunami, inundación catastrófica
+   - Riesgos no catastróficos: incendio, robo, vandalismo, daños por agua, viento, lluvia
+   - Lucro cesante / Pérdida de beneficios: cubre pérdida de ingresos durante reparación
+   - Pérdida de rentas: para propiedades arrendadas
+   - Responsabilidad civil: daños a terceros
+4. RUBROS ASEGURADOS — captura cada uno por separado:
+   - Edificio/Estructura
+   - Maquinaria y equipo
+   - Mobiliario y contenido
+   - Mercadería e inventario
+5. SUBLÍMITES: extensiones de cobertura con montos máximos — captúralos en beneficios_sin_costo
+6. DEDUCIBLES: generalmente separados para riesgos catastróficos y no catastróficos
+7. BASE INDEMNIZACION: Valor de Reposición (hasta cierta antigüedad) o Valor Real Efectivo
+
 Retorna UN array JSON:
 [{
-  "aseguradora":"nombre oficial","plan":"nombre","moneda":"USD o CRC",
-  "prima_anual":numero con IVA,"deducible":numero,"deducible_porcentaje":numero,
+  "aseguradora":"nombre oficial",
+  "plan":"nombre del plan",
+  "moneda":"USD o CRC",
+  "prima_anual":numero TOTAL con IVA,
   "suma_asegurada_total":numero,
-  "cobertura_incendio":true/false,"cobertura_terremoto":true/false,"cobertura_huracan":true/false,
-  "cobertura_inundacion":true/false,"cobertura_robo":true/false,
-  "responsabilidad_civil":numero,"perdida_beneficios":true/false,
-  "base_indemnizacion":"valor real o valor de reposicion",
-  "documentos_para_reclamar":["max 3 documentos principales que pide la aseguradora para reclamar, en lenguaje simple"],
-  "exclusiones":["max 3 exclusiones principales en lenguaje simple"],
-  "coberturas":{},"numero_cotizacion":"codigo","vigencia":"periodo",
-  "analisis_ia":{"recomendacion":"texto","fortalezas":["lista"],"debilidades":["lista"],
-    "perfil_ideal":"texto","precio_valor":1-10,"cobertura_score":1-10,"servicio_score":1-10},
-  "comision_porcentaje":numero
+  "suma_asegurada_edificio":numero o 0,
+  "suma_asegurada_maquinaria":numero o 0,
+  "suma_asegurada_mobiliario":numero o 0,
+  "suma_asegurada_mercaderia":numero o 0,
+  "base_indemnizacion":"Valor de Reposicion o Valor Real Efectivo",
+  "cobertura_incendio":true/false,
+  "cobertura_terremoto":true/false,
+  "cobertura_huracan":true/false,
+  "cobertura_inundacion":true/false,
+  "cobertura_robo":true/false,
+  "perdida_beneficios":true/false,
+  "responsabilidad_civil":numero o 0,
+  "deducibles_por_riesgo":[{
+    "riesgo":"Riesgos catastróficos / Riesgos no catastróficos / nombre especifico",
+    "deducible":"descripcion simple — ej: 3% minimo $5,000 / Fijo $2,500 por evento"
+  }],
+  "beneficios_sin_costo":["sublimites y extensiones incluidas — ej: Rotura de cristales hasta $250,000 / Gastos de remocion de escombros hasta $300,000"],
+  "exclusiones":["max 3 exclusiones criticas en lenguaje simple"],
+  "documentos_para_reclamar":["max 3 documentos"],
+  "comision_porcentaje":numero,
+  "numero_cotizacion":"codigo",
+  "vigencia":"periodo",
+  "analisis_ia":{
+    "recomendacion":"2-3 oraciones directas sobre este plan para este negocio especifico",
+    "fortalezas":["punto fuerte CON MONTO real del PDF","segundo punto fuerte"],
+    "debilidades":["limitacion real CON IMPACTO en dolares o colones","segunda debilidad"],
+    "brecha_proteccion":"que riesgo queda desprotegido y cuanto podria costar",
+    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
+    "perfil_si":"para que tipo de negocio SI es ideal",
+    "perfil_no":"para que tipo de negocio NO es ideal",
+    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de negocio",
+    "precio_valor":1-10,
+    "puntuacion_cobertura":1-10,
+    "puntuacion_servicio":1-10
+  }
 }]
 Responde SOLO con el array JSON.`
     };
@@ -1268,7 +1314,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                           tipoSeguro==='autos'&&c.valor_vehiculo?{l:'Valor vehículo', v:fmtC(c.valor_vehiculo,c.moneda), s:'Suma asegurada'}:null,
                           esLUC?{l:'RC Límite Único (LUC)', v:fmtC(rcAccidente,c.moneda), s:'Personas + bienes'}:rcAccidente>0&&rcPersona>0&&rcPersona!==rcAccidente?{l:'RC Personas', v:fmtC(rcPersona,c.moneda)+' /persona', s:fmtC(rcAccidente,c.moneda)+' /accidente'}:rcAccidente>0?{l:'RC Personas', v:fmtC(rcAccidente,c.moneda), s:'Por accidente'}:null,
                           !esLUC&&rcDanos>0?{l:'RC Daños Terceros', v:fmtC(rcDanos,c.moneda), s:'Propiedad terceros'}:null,
-                          (c.suma_asegurada_edificio||c.suma_asegurada_total)&&tipoSeguro!=='autos'?{l:'Suma asegurada', v:fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total,c.moneda), s:c.suma_asegurada_contenido>0?`+${fmtC(c.suma_asegurada_contenido,c.moneda)} contenido`:null}:null,
+                          (c.suma_asegurada_edificio||c.suma_asegurada_total)&&tipoSeguro!=='autos'?{l:'Suma asegurada', v:fmtC(c.suma_asegurada_edificio||c.suma_asegurada_total,c.moneda), s:[c.suma_asegurada_contenido>0?`+${fmtC(c.suma_asegurada_contenido,c.moneda)} contenido`:null,c.suma_asegurada_mobiliario>0?`+${fmtC(c.suma_asegurada_mobiliario,c.moneda)} mobiliario`:null,c.suma_asegurada_maquinaria>0?`+${fmtC(c.suma_asegurada_maquinaria,c.moneda)} maquinaria`:null,c.suma_asegurada_mercaderia>0?`+${fmtC(c.suma_asegurada_mercaderia,c.moneda)} mercadería`:null].filter(Boolean).join(' / ')||null}:null,
                         ].filter(Boolean).map((m,j) => (
                           <div key={j} style={{padding:'14px 18px',borderRight:'1px solid #F1F5F9',minWidth:'140px',flex:1}}>
                             <div style={s.mLabel}>{m.l}</div>
@@ -1534,7 +1580,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                             {info.beneficios.length>0 && (
                               <div style={s.cliSection}>
                                 <div style={s.cliSectionTitle}>Beneficios extra sin costo adicional</div>
-                                {info.beneficios.slice(0,3).map((b,j) => (
+                                {info.beneficios.map((b,j) => (
                                   <div key={j} style={s.cliPunto}>
                                     <div style={s.cliPuntoIcon('benefit')}>+</div>
                                     <div style={s.cliPuntoTxt}>{b}</div>
