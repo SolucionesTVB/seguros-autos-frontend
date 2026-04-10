@@ -1,4 +1,19 @@
 import React, { useState, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCJwRS5h5PZEXpo1nyrEM_yi9oVGZoPFoI",
+  authDomain: "comparativo-seguros-e8717.firebaseapp.com",
+  projectId: "comparativo-seguros-e8717",
+  storageBucket: "comparativo-seguros-e8717.firebasestorage.app",
+  messagingSenderId: "80363285812",
+  appId: "1:80363285812:web:cb6ac0666791d0d43dc961"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+
 import { FileText, CheckCircle, Send, X, Loader2 } from 'lucide-react';
 
 const quitarTildes = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -338,6 +353,30 @@ const generarPDF = async (cotizaciones, cliente, tipoSeguro) => {
 export default function App() {
   const savedCliente = (() => { try { return JSON.parse(localStorage.getItem('noa_cliente')||'null'); } catch { return null; } })();
   const [tipoSeguro, setTipoSeguro] = useState(localStorage.getItem('noa_tipo_seguro') || 'autos');
+  // Cargar cotizaciones desde Firebase al iniciar
+  const cargarDesdeFirebase = async (tipo) => {
+    try {
+      const snap = await getDocs(collection(db, 'cotizaciones'));
+      const docs = snap.docs.map(d=>({...d.data(),_id:d.id}))
+        .filter(d=>d.tipo===tipo)
+        .sort((a,b)=>{ const fa=a.fecha?.seconds||0; const fb=b.fecha?.seconds||0; return fb-fa; });
+      if (docs.length>0) {
+        const data = docs[0];
+        if (data.cotizaciones && data.cotizaciones.length > 0) {
+          setCotizaciones(data.cotizaciones);
+          setMejor(data.cotizaciones[0]);
+          if (data.cliente) setCliente(data.cliente);
+          localStorage.setItem(`noa_cots_${tipo}`, JSON.stringify(data.cotizaciones));
+          localStorage.setItem('noa_cliente', JSON.stringify(data.cliente||{}));
+          setTab('comparativo');
+          showToast('✅ Cotizaciones cargadas desde la nube');
+        }
+      } else {
+        showToast('No hay cotizaciones guardadas para este tipo','error');
+      }
+    } catch(e) { console.error('Error cargando Firebase:', e); showToast('Error cargando desde la nube','error'); }
+  };
+
   const getCotsPorTipo = (tipo) => { try { return JSON.parse(localStorage.getItem(`noa_cots_${tipo}`)||'null'); } catch { return null; } };
   const tipoInicial = localStorage.getItem('noa_tipo_seguro') || 'autos';
   const savedCots = getCotsPorTipo(tipoInicial);
@@ -783,7 +822,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,
         'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4096,
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8192,
         messages:[{ role:'user', content: promptSonnet }]
       })
     });
@@ -849,6 +888,15 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
       const res = todasCotizaciones.sort((a,b)=>b.score-a.score);
       setCotizaciones(res); setMejor(res[0]);
       localStorage.setItem(`noa_cots_${tipoSeguro}`,JSON.stringify(res));
+      // Guardar en Firebase
+      try {
+        await addDoc(collection(db, 'cotizaciones'), {
+          tipo: tipoSeguro,
+          cliente: cliente,
+          cotizaciones: res,
+          fecha: serverTimestamp()
+        });
+      } catch(e) { console.error('Firebase error:', e); }
       localStorage.setItem('noa_tipo_seguro',tipoSeguro);
       localStorage.setItem('noa_cliente',JSON.stringify(cliente));
       showToast(`\u2705 ${res.length} plan(es) analizados con IA`);
@@ -1084,6 +1132,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
           <span style={s.sugese}>SUGESE Lic 01-2030</span>
+          <button style={{...s.btnNew, background:'#1E40AF', marginRight:'6px'}} onClick={() => cargarDesdeFirebase(tipoSeguro)}>☁️ Cargar último</button>
           <button style={s.btnNew} onClick={limpiar}>+ Nueva Cotización</button>
         </div>
       </div>
