@@ -386,6 +386,9 @@ export default function App() {
   const [mejor, setMejor] = useState(savedCots ? savedCots[0] : null);
   const [procesando, setProcesando] = useState(false);
   const [progreso, setProgreso] = useState(0);
+  const [mensajeProceso, setMensajeProceso] = useState('');
+  const [planAssa, setPlanAssa] = useState('Platino');
+
   const [toast, setToast] = useState(null);
   const [expandido, setExpandido] = useState({});
   const toggleExpandido = (i) => setExpandido(prev => ({...prev, [i]: !prev[i]}));
@@ -395,6 +398,17 @@ export default function App() {
 
   const showToast = (msg, tipo='ok') => { setToast({msg,tipo}); setTimeout(() => setToast(null), 4000); };
 
+  const webAseguradora = (aseguradora) => {
+    const a = (aseguradora||'').toLowerCase();
+    if (a.includes('assa')) return 'https://www.assanet.cr';
+    if (a.includes('ins')||a.includes('nacional')) return 'https://www.ins-cr.com';
+    if (a.includes('mnk')) return 'https://mnkseguros.com';
+    if (a.includes('qualitas')) return 'https://www.qualitas.co.cr';
+    if (a.includes('lafise')) return 'https://www.lafise.com/slcr';
+    if (a.includes('mapfre')) return 'https://www.mapfre.cr';
+    if (a.includes('davivienda')) return 'https://www.davivienda.cr/seguros';
+    return null;
+  };
   const codigoSUGESE = (aseguradora) => {
     const a = (aseguradora||'').toLowerCase();
     if (tipoSeguro==='autos') {
@@ -446,7 +460,7 @@ export default function App() {
       autos: `Sos un experto corredor de seguros en Costa Rica con 20 años de experiencia. Analiza este PDF de SEGURO DE AUTOS. ${basePrompt}
 
 ESTRUCTURA DE PDFs POR ASEGURADORA:
-ASSA: 3 planes (Platino/Dorado/Economico). Coberturas: Lesiones corporales por persona Y accidente, Daños a terceros, Asistencia medica, Comprensivo (robo/hurto), Colision o vuelco. Pagina 2: beneficios incluidos (muerte accidental, gastos funerarios, robo articulos, alquiler auto). GENERA 3 JSONs.
+ASSA: 3 planes (Platino/Dorado/Economico). Coberturas: Lesiones corporales por persona Y accidente, Daños a terceros, Asistencia medica, Comprensivo (robo/hurto), Colision o vuelco. Pagina 2: beneficios incluidos (muerte accidental, gastos funerarios, robo articulos, alquiler auto). GENERA SOLO 1 JSON — el plan: ${planAssa}. Ignorá los otros planes.
 INS: Codigos 17A=RC Lesion/Muerte, 17B=Serv.Medic, 17C=RC Daños Propiedad, 17D=Colision/Vuelco, 17E=Gastos Legales, 17F=Robo/Hurto, 17H=Riesgos Adicionales, 17M=Multiasistencia, 17N=Exencion Deducible, IDD=Indemnizacion Deducible. GENERA 1 JSON.
 MNK: TABLA 1-COBERTURAS: CHECK=SI INCLUYE, RAYA=NO INCLUYE. TABLA 2-DEDUCIBLES: solo incluye coberturas que tenian CHECK en tabla 1. A3=RC LUC (personas+bienes juntos), B=Atencion Medica, C=RC Alcohol, DA=Perdidas Parciales, DB=Perdidas Totales, G1=Multiasistencia, D=Colision/Vuelco, F=Robo/Hurto, H=Riesgos Adicionales. GENERA 1 JSON.
 Qualitas: Estructura de coberturas: Item 1=Daños Materiales (=colision_vuelco), Item 1.1=Rotura Cristales (=cristales), Item 2=Robo Total, Item 3.1=RC Personas Alcohol, Item 3.2=RC Bienes Alcohol, Item 3.3=Responsabilidad Civil Complementaria (=RC Personas principal — captura este monto en rc_personas_por_persona Y rc_personas_por_accidente), Item 4=Gastos Legales, Item 5=Gastos Medicos Ocupantes (=asistencia_medica), Item 10=BIS RC Daños Ocupantes, Item 13=Robo Parcial, Item 15=Asistencia Vial. RC Daños Terceros usa el monto de RC Bienes (Item 3.2). GENERA 1 JSON.
@@ -507,14 +521,11 @@ REGLAS CRITICAS:
   "comision_porcentaje":numero,
   "numero_cotizacion":"codigo o null",
   "analisis_ia":{
-    "recomendacion":"2-3 oraciones directas — por que este plan si o no para este vehiculo y perfil especifico",
-    "fortalezas":["punto fuerte CON MONTO real del PDF — ej: RC de 200M cubre accidentes graves en zona urbana","segundo punto fuerte concreto"],
-    "debilidades":["limitacion real CON IMPACTO — ej: sin cristales, si los rompen el cliente paga 100% del reemplazo","segunda debilidad concreta"],
-    "brecha_proteccion":"Que riesgo real queda desprotegido y cuanto podria costar — ej: RC de 50M insuficiente, un atropello grave puede superar 150M en gastos medicos y legales",
-    "alerta_corredor":"UNA advertencia critica que el corredor DEBE decirle al cliente antes de firmar — especifica y accionable",
-    "perfil_si":"Para quien SI es este plan — perfil muy especifico con razon concreta",
-    "perfil_no":"Para quien NO es este plan — perfil muy especifico con razon concreta",
-    "vs_mercado":"Como se compara precio y cobertura vs el estandar del mercado CR para este tipo de vehiculo",
+    "recomendacion":"2 oraciones directas — por que SI o NO este plan",
+    "brecha_proteccion":"riesgo desprotegido y costo estimado en colones o dolares",
+    "alerta_corredor":"UNA advertencia critica especifica antes de firmar",
+    "perfil_si":"para quien SI es ideal — especifico",
+    "perfil_no":"para quien NO es ideal — especifico",
     "precio_valor":1-10,
     "puntuacion_cobertura":1-10,
     "puntuacion_servicio":1-10
@@ -585,14 +596,11 @@ Retorna UN array JSON:
   "numero_cotizacion":"codigo",
   "vigencia":"periodo",
   "analisis_ia":{
-    "recomendacion":"2-3 oraciones directas sobre este plan de hogar especifico",
-    "fortalezas":["punto fuerte CON MONTO real","segundo punto fuerte"],
-    "debilidades":["limitacion real CON IMPACTO en colones","segunda debilidad"],
-    "brecha_proteccion":"que riesgo del hogar queda desprotegido y cuanto podria costar",
-    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
-    "perfil_si":"para quien SI es ideal este plan con razon concreta",
-    "perfil_no":"para quien NO es con razon concreta",
-    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de seguro de hogar",
+    "recomendacion":"2 oraciones directas sobre este plan de hogar",
+    "brecha_proteccion":"riesgo desprotegido y costo estimado",
+    "alerta_corredor":"UNA advertencia critica antes de firmar",
+    "perfil_si":"para quien SI es ideal",
+    "perfil_no":"para quien NO es ideal",
     "precio_valor":1-10,
     "puntuacion_cobertura":1-10,
     "puntuacion_servicio":1-10
@@ -647,14 +655,11 @@ Retorna UN array JSON:
   "numero_cotizacion":"codigo",
   "vigencia":"periodo",
   "analisis_ia":{
-    "recomendacion":"2-3 oraciones directas sobre este plan para este negocio especifico",
-    "fortalezas":["punto fuerte CON MONTO real del PDF","segundo punto fuerte"],
-    "debilidades":["limitacion real CON IMPACTO en colones","segunda debilidad"],
-    "brecha_proteccion":"que riesgo comercial queda desprotegido y cuanto podria costar",
-    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente antes de firmar",
-    "perfil_si":"para que tipo de negocio SI es ideal este plan",
-    "perfil_no":"para que tipo de negocio NO es ideal",
-    "vs_mercado":"como se compara precio y cobertura vs estandar del mercado CR para este tipo de negocio",
+    "recomendacion":"2 oraciones directas sobre este plan comercial",
+    "brecha_proteccion":"riesgo desprotegido y costo estimado",
+    "alerta_corredor":"UNA advertencia critica antes de firmar",
+    "perfil_si":"para que negocio SI es ideal",
+    "perfil_no":"para que negocio NO es ideal",
     "precio_valor":1-10,
     "puntuacion_cobertura":1-10,
     "puntuacion_servicio":1-10
@@ -711,14 +716,11 @@ Retorna UN array JSON:
   "numero_cotizacion":"codigo",
   "vigencia":"periodo",
   "analisis_ia":{
-    "recomendacion":"2-3 oraciones directas sobre este plan para este negocio especifico",
-    "fortalezas":["punto fuerte CON MONTO real del PDF","segundo punto fuerte"],
-    "debilidades":["limitacion real CON IMPACTO en dolares o colones","segunda debilidad"],
-    "brecha_proteccion":"que riesgo queda desprotegido y cuanto podria costar",
-    "alerta_corredor":"UNA advertencia critica que el corredor debe decirle al cliente",
-    "perfil_si":"para que tipo de negocio SI es ideal",
-    "perfil_no":"para que tipo de negocio NO es ideal",
-    "vs_mercado":"como se compara vs estandar del mercado CR para este tipo de negocio",
+    "recomendacion":"2 oraciones directas sobre este plan",
+    "brecha_proteccion":"riesgo desprotegido y costo estimado",
+    "alerta_corredor":"UNA advertencia critica antes de firmar",
+    "perfil_si":"para que negocio SI es ideal",
+    "perfil_no":"para que negocio NO es ideal",
     "precio_valor":1-10,
     "puntuacion_cobertura":1-10,
     "puntuacion_servicio":1-10
@@ -796,6 +798,36 @@ Responde SOLO con el JSON array.`;
 DATOS REALES DE LA COTIZACION:
 ${JSON.stringify(Array.isArray(datosBase) ? datosBase : [datosBase], null, 2)}
 
+CONTEXTO REAL DEL MERCADO DE SEGUROS CR 2025-2026:
+PRIMAS TIPICAS AUTOS CR (con IVA):
+- Vehiculo hasta 5 anos: 3.5%-5.5% del valor comercial anual
+- Vehiculo 6-10 anos: 4%-6% del valor comercial anual
+- Vehiculo mas de 10 anos: 5%-7% del valor comercial anual
+
+RC PERSONAS — ESTANDAR MINIMO CR:
+- Por persona: RC legal minimo COSEVI es bajo — mercado privado ofrece C50M-C200M/persona
+- Por accidente: C100M-C400M es el rango competitivo del mercado privado
+- Sentencias judiciales CR por lesiones graves: C30M-C150M tipico, casos complejos C200M+
+- Sentencias por muerte en accidente: C80M-C300M segun dependientes economicos
+
+RC DANOS TERCEROS — ESTANDAR CR:
+- Mercado privado: C50M-C150M tipico para vehiculos personales
+- Accidentes en zonas urbanas San Jose pueden superar C50M en infraestructura
+
+EXCLUSIONES CRITICAS MAS COMUNES EN CR:
+- Conducir bajo efectos de alcohol o drogas (si no tiene cobertura RC alcohol)
+- Vehiculo con mas de 5 anos: perdida beneficio taxi aeropuerto en ASSA
+- Infraseguro: si valor declarado es menor al valor real de mercado, aplica regla proporcional
+- Caminos no pavimentados o lastrados: algunos planes excluyen danos en esas condiciones
+- Conductor sin licencia vigente o con puntos insuficientes
+
+COSTOS REALES DE SINIESTROS EN CR:
+- Reparacion colision menor (golpe): C150,000-C500,000
+- Reparacion colision moderada: C500,000-C2,000,000
+- Perdida total vehiculo C6M-C10M: reposicion real C7M-C12M en mercado actual
+- Hospitalizacion privada por accidente: C500,000-C5,000,000 por evento
+- Honorarios abogado defensa penal: C300,000-C2,000,000 por proceso
+
 REGLAS CRITICAS — SIN EXCEPCION:
 1. Usa SOLO los datos reales que ves arriba — NUNCA inventes coberturas, montos o caracteristicas que no esten en los datos
 2. Si una cobertura esta en los datos como true/false o tiene monto, usala exactamente
@@ -871,19 +903,21 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
 
   const procesar = async () => {
     if (archivos.length===0) { showToast('Seleccioná al menos un PDF','error'); return; }
-    setProcesando(true); setProgreso(0);
+    setProcesando(true); setProgreso(0); setMensajeProceso('');
+    const intervalo = null;
     const todasCotizaciones = [];
-    for (let i=0;i<archivos.length;i++) {
-      setProgreso(i+1);
-      try {
-        const planes = await procesarUnPDF(archivos[i]);
-        const arr = Array.isArray(planes)?planes:[planes];
+    // Paralelo
+    const resultados = await Promise.allSettled(archivos.map(a => procesarUnPDF(a)));
+    setProgreso(archivos.length);
+    resultados.forEach((r,i) => {
+      if (r.status==='fulfilled') {
+        const arr = Array.isArray(r.value)?r.value:[r.value];
         todasCotizaciones.push(...arr.map(normalizarCotizacion));
-      } catch(err) {
-        console.error('Error procesando',archivos[i].name,err);
+      } else {
+        console.error('Error procesando',archivos[i].name,r.reason);
         showToast(`\u26a0\ufe0f Error leyendo ${archivos[i].name}`,'error');
       }
-    }
+    });
     if (todasCotizaciones.length>0) {
       const res = todasCotizaciones.sort((a,b)=>b.score-a.score);
       setCotizaciones(res); setMejor(res[0]);
@@ -901,7 +935,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
       localStorage.setItem('noa_cliente',JSON.stringify(cliente));
       showToast(`\u2705 ${res.length} plan(es) analizados con IA`);
     } else { showToast('No se pudo procesar ningún PDF','error'); }
-    setProcesando(false); setTab('comparativo');
+    clearInterval(intervalo); setProcesando(false); setMensajeProceso(''); setTab('comparativo');
   };
 
   const limpiar = () => {
@@ -949,8 +983,8 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
     nav: { background:'#0D1F35', display:'flex', padding:'0 28px', gap:'2px' },
     navItem: (on) => ({ padding:'13px 16px', fontSize:'12px', color: on?'#93C5FD':'#475569', borderBottom: on?'2px solid #3B82F6':'2px solid transparent', cursor:'pointer', fontWeight: on?'600':'500' }),
     // TYPES
-    typebar: { background:'white', padding:'12px 28px', display:'flex', gap:'8px', borderBottom:'1px solid #E2E8F0', flexWrap:'wrap' },
-    typeBtn: (on) => ({ padding:'7px 16px', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border: on?'1.5px solid #BFDBFE':'1.5px solid #E2E8F0', background: on?'#EFF6FF':'white', color: on?'#1D4ED8':'#64748B' }),
+    typebar: { background:'#0D1F35', padding:'12px 28px', display:'flex', gap:'8px', borderBottom:'1px solid #1E3A5F', flexWrap:'wrap' },
+    typeBtn: (on) => ({ padding:'7px 16px', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border: on?'1.5px solid #60A5FA':'1.5px solid #1E3A5F', background: on?'#1E3A5F':'transparent', color: on?'white':'#93C5FD' }),
     // BODY
     body: { padding:'24px 28px', maxWidth:'1200px', margin:'0 auto' },
     topBar: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' },
@@ -1180,19 +1214,19 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
               </div>
               <div style={{display:'flex',gap:'6px',flexWrap:'wrap',justifyContent:'flex-end',maxWidth:'50%'}}>
                 {info.aseguradoras.map(a => (
-                  <span key={a} style={{background:'#1E3A5F',color:'#93C5FD',fontSize:'10px',fontWeight:'600',padding:'3px 8px',borderRadius:'6px'}}>{a}</span>
+                  <span key={a} onClick={e=>{e.stopPropagation();webAseguradora(a)&&window.open(webAseguradora(a),'_blank');}} style={{background:'#1E3A5F',color:'#93C5FD',fontSize:'10px',fontWeight:'600',padding:'3px 8px',borderRadius:'6px',cursor:webAseguradora(a)?'pointer':'default',transition:'all 0.2s'}} onMouseEnter={e=>{if(webAseguradora(a))e.target.style.background='#2563EB'}} onMouseLeave={e=>e.target.style.background='#1E3A5F'}>{a}</span>
                 ))}
               </div>
             </div>
-            <div style={{padding:'24px 28px'}}>
+            <div style={{padding:'24px 28px',background:'#0D1F35'}}>
               {/* Zona de drop */}
-              <div style={{border:'2px dashed #BFDBFE',borderRadius:'12px',padding:'28px',textAlign:'center',background:'#F8FBFF',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
+              <div style={{border:'2px dashed #1E3A5F',borderRadius:'12px',padding:'28px',textAlign:'center',background:'#0A1628',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
                 onClick={() => document.getElementById('fu').click()}>
                 <input type="file" accept=".pdf" multiple id="fu" style={{display:'none'}}
                   onChange={e => setArchivos(Array.from(e.target.files).slice(0,5))} />
                 <div style={{fontSize:'32px',marginBottom:'8px'}}>📄</div>
-                <p style={{color:'#1E40AF',fontWeight:'700',fontSize:'15px',marginBottom:'4px'}}>Arrastrá los PDFs aquí</p>
-                <p style={{color:'#64748B',fontSize:'12px',marginBottom:'14px'}}>o hacé clic para seleccionar · máximo 5 archivos</p>
+                <p style={{color:'#93C5FD',fontWeight:'700',fontSize:'15px',marginBottom:'4px'}}>Arrastrá los PDFs aquí</p>
+                <p style={{color:'#475569',fontSize:'12px',marginBottom:'14px'}}>o hacé clic para seleccionar · máximo 5 archivos</p>
                 <button style={{padding:'9px 24px',background:'#2563EB',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>
                   Seleccionar Archivos
                 </button>
@@ -1201,8 +1235,8 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
               {archivos.length>0 && (
                 <div style={{marginBottom:'16px'}}>
                   {archivos.map((f,i) => (
-                    <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'#EFF6FF',borderRadius:'8px',padding:'10px 14px',marginBottom:'6px',border:'1px solid #BFDBFE'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'8px',fontSize:'13px',color:'#1E40AF',fontWeight:'500'}}>
+                    <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'#1E3A5F',borderRadius:'8px',padding:'10px 14px',marginBottom:'6px',border:'1px solid #2563EB'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px',fontSize:'13px',color:'#93C5FD',fontWeight:'500'}}>
                         <FileText size={14}/> {f.name}
                       </div>
                       <button onClick={() => setArchivos(archivos.filter((_,idx)=>idx!==i))} style={{background:'none',border:'none',cursor:'pointer',color:'#94A3B8'}}>
@@ -1212,32 +1246,37 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                   ))}
                 </div>
               )}
+              {/* Selector plan ASSA */}
+              {tipoSeguro==='autos' && archivos.some(f => f.name.toLowerCase().includes('assa')) && (
+                <div style={{background:'#0A1628',border:'1px solid #2563EB',borderRadius:'12px',padding:'14px 16px',marginBottom:'16px'}}>
+                  <p style={{fontSize:'13px',fontWeight:'700',color:'#93C5FD',marginBottom:'8px'}}>🔶 ASSA detectada — ¿Qué plan querés analizar?</p>
+                  <div style={{display:'flex',gap:'8px',marginBottom:'8px'}}>
+                    {['Platino','Dorado','Económico'].map(p => (
+                      <button key={p} onClick={() => setPlanAssa(p)} style={{padding:'7px 16px',borderRadius:'8px',border:'2px solid',borderColor:planAssa===p?'#2563EB':'#1E3A5F',background:planAssa===p?'#2563EB':'#0D1F35',color:planAssa===p?'white':'#93C5FD',fontWeight:'700',fontSize:'13px',cursor:'pointer'}}>
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{fontSize:'11px',color:'#475569'}}>💡 Mirá la propuesta — si dice Platino, seleccioná Platino</p>
+                </div>
+              )}
               {/* Botón procesar / spinner */}
               {procesando ? (
-                <div style={{textAlign:'center',padding:'20px',background:'#F8FAFC',borderRadius:'12px',border:'1px solid #E2E8F0'}}>
-                  <Loader2 size={32} color="#2563EB" style={{animation:'spin 1s linear infinite',margin:'0 auto 10px'}}/>
-                  <p style={{fontWeight:'700',color:'#334155',fontSize:'14px',marginBottom:'4px'}}>Analizando PDF {progreso} de {archivos.length} con IA...</p>
-                  <div style={{background:'#E2E8F0',borderRadius:'8px',height:'6px',marginTop:'12px',marginBottom:'8px'}}>
-                    <div style={{background:'#2563EB',height:'6px',borderRadius:'8px',width:`${(progreso/Math.max(archivos.length,1))*100}%`,transition:'width 0.5s'}}/>
+                <div style={{textAlign:'center',padding:'28px',background:'linear-gradient(135deg,#0A1628,#1E3A5F)',borderRadius:'16px',border:'1px solid #2563EB'}}>
+                  <div style={{display:'flex',gap:'8px',justifyContent:'center',margin:'0 auto 16px'}}><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.2s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.4s'}}/></div>
+                  <p style={{fontWeight:'800',color:'white',fontSize:'16px',marginBottom:'8px'}}>Analizando con IA NOA</p>
+
+                  <div style={{background:'#1E3A5F',borderRadius:'8px',height:'8px',marginBottom:'8px'}}>
+                    <div style={{background:'linear-gradient(90deg,#2563EB,#60A5FA)',height:'8px',borderRadius:'8px',width:`${Math.max(5,(progreso/Math.max(archivos.length,1))*100)}%`,transition:'width 0.8s ease'}}/>
                   </div>
-                  <p style={{fontSize:'11px',color:'#94A3B8'}}>Esto tarda ~30 segundos por PDF. No cerrés la página.</p>
+                  <p style={{fontSize:'11px',color:'#475569'}}>Procesando {archivos.length} PDF(s) en paralelo · No cerrés la página</p>
                 </div>
               ) : (
-                <button onClick={procesar} style={{width:'100%',padding:'16px',background:'linear-gradient(135deg,#059669,#047857)',color:'white',border:'none',borderRadius:'12px',fontSize:'16px',fontWeight:'800',cursor:'pointer'}}>
+                <button onClick={procesar} style={{width:'100%',padding:'16px',background:'linear-gradient(135deg,#1D4ED8,#2563EB)',color:'white',border:'none',borderRadius:'12px',fontSize:'16px',fontWeight:'800',cursor:'pointer'}}>
                   ✨ Generar Comparativo con IA
                 </button>
               )}
-              {/* Qué extrae la IA */}
-              <div style={{marginTop:'20px',background:'#F8FAFC',borderRadius:'12px',padding:'16px',border:'1px solid #E2E8F0'}}>
-                <p style={{fontSize:'12px',fontWeight:'700',color:'#334155',marginBottom:'10px'}}>🤖 La IA extrae automáticamente:</p>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px'}}>
-                  {info.extrae.map(e => (
-                    <div key={e} style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'12px',color:'#64748B'}}>
-                      <CheckCircle size={12} color="#10B981" style={{flexShrink:0}}/> {e}
-                    </div>
-                  ))}
-                </div>
-              </div>
+
             </div>
           </div>
           );
@@ -1338,7 +1377,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                         <div style={s.corLogo(color)}>{getInitials(c.aseguradora)}</div>
                         <div style={{flex:1}}>
                           <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
-                            <div style={s.corName}>{c.aseguradora}</div>
+                            <div style={s.corName}>{webAseguradora(c.aseguradora) ? <span onClick={e=>{e.stopPropagation();window.open(webAseguradora(c.aseguradora),'_blank');}} style={{cursor:'pointer',borderBottom:'1px dotted #94A3B8'}}>{c.aseguradora}</span> : c.aseguradora}</div>
                             {i===0 && <div style={s.bestTag}>✨ RECOMENDADO IA</div>}
                           </div>
                           {c.plan && <div style={s.corPlan}>{c.plan}</div>}
