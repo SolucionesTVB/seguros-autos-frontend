@@ -1434,54 +1434,13 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
                       )}
 
                       {/* CRITERIO IA */}
-                      {c.analisis_ia && (
-                        <div style={{padding:'14px 22px',borderBottom:'1px solid #F1F5F9',background:'#F8FAFF'}}>
-                          <div style={{fontSize:'10px',fontWeight:'700',color:'#1E40AF',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'8px'}}>🤖 Criterio técnico NOA</div>
-
-                          {/* RECOMENDACION */}
-                          {c.analisis_ia.recomendacion && <div style={{fontSize:'12px',color:'#334155',lineHeight:'1.6',marginBottom:'10px',padding:'8px 10px',background:'white',borderRadius:'6px',border:'1px solid #DBEAFE'}}>{c.analisis_ia.recomendacion}</div>}
-
-                          {/* BRECHA DE PROTECCION */}
-                          {c.analisis_ia.brecha_proteccion && (
-                            <div style={{background:'#FFF1F2',border:'1px solid #FECDD3',borderRadius:'6px',padding:'8px 10px',marginBottom:'8px'}}>
-                              <div style={{fontSize:'10px',fontWeight:'700',color:'#9F1239',marginBottom:'3px'}}>🚨 Brecha de protección</div>
-                              <div style={{fontSize:'11px',color:'#334155',lineHeight:'1.5'}}>{c.analisis_ia.brecha_proteccion}</div>
-                            </div>
-                          )}
-
-                          {/* ALERTA CORREDOR */}
-                          {c.analisis_ia.alerta_corredor && (
-                            <div style={{background:'#FFFBEB',border:'1px solid #FDE68A',borderRadius:'6px',padding:'8px 10px',marginBottom:'8px'}}>
-                              <div style={{fontSize:'10px',fontWeight:'700',color:'#92400E',marginBottom:'3px'}}>⚡ Alerta al corredor</div>
-                              <div style={{fontSize:'11px',color:'#334155',lineHeight:'1.5'}}>{c.analisis_ia.alerta_corredor}</div>
-                            </div>
-                          )}
-
-                          {/* PERFIL SI / NO */}
-                          {(c.analisis_ia.perfil_si||c.analisis_ia.perfil_no) && (
-                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px',marginBottom:'8px'}}>
-                              {c.analisis_ia.perfil_si && (
-                                <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:'6px',padding:'8px 10px'}}>
-                                  <div style={{fontSize:'10px',fontWeight:'700',color:'#166534',marginBottom:'3px'}}>👤 Para quién SÍ</div>
-                                  <div style={{fontSize:'11px',color:'#334155',lineHeight:'1.5'}}>{c.analisis_ia.perfil_si}</div>
-                                </div>
-                              )}
-                              {c.analisis_ia.perfil_no && (
-                                <div style={{background:'#FFF1F2',border:'1px solid #FECDD3',borderRadius:'6px',padding:'8px 10px'}}>
-                                  <div style={{fontSize:'10px',fontWeight:'700',color:'#9F1239',marginBottom:'3px'}}>👤 Para quién NO</div>
-                                  <div style={{fontSize:'11px',color:'#334155',lineHeight:'1.5'}}>{c.analisis_ia.perfil_no}</div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* VS MERCADO */}
-                          {c.analisis_ia.vs_mercado && (
-                            <div style={{background:'#F0F9FF',border:'1px solid #BAE6FD',borderRadius:'6px',padding:'8px 10px'}}>
-                              <div style={{fontSize:'10px',fontWeight:'700',color:'#0369A1',marginBottom:'3px'}}>📊 vs Mercado CR</div>
-                              <div style={{fontSize:'11px',color:'#334155',lineHeight:'1.5'}}>{c.analisis_ia.vs_mercado}</div>
-                            </div>
-                          )}
+                      {c.analisis_ia?.alerta_corredor && (
+                        <div style={{padding:'10px 22px',borderBottom:'1px solid #F1F5F9',background:'#FFFBEB',display:'flex',alignItems:'flex-start',gap:'8px'}}>
+                          <span style={{fontSize:'14px',flexShrink:0}}>⚡</span>
+                          <div>
+                            <div style={{fontSize:'10px',fontWeight:'700',color:'#92400E',marginBottom:'2px'}}>Alerta antes de firmar</div>
+                            <div style={{fontSize:'12px',color:'#78350F',lineHeight:'1.5'}}>{c.analisis_ia.alerta_corredor}</div>
+                          </div>
                         </div>
                       )}
 
