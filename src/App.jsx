@@ -83,7 +83,7 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
   const toggle = (key) => setAbierto(prev => ({...prev, [key]: !prev[key]}));
   const datosAseg = {
     INS: {
-      cal: "AAA (Fitch Ratings, Dic 2024) · A- (AM Best, Feb 2025) · Aaa.cr (Moody's Local, Ago 2025)",
+      cal: "AAA.cr (Moody's Local, Ago 2025) · AAA(cri) (Fitch, 2024) · A Excelente (AM Best) · ISC: 3.3x (mín. regulatorio 1.3x, Jun 2025)",
       part: "65% del total de primas emitidas en CR (Jun 2025, SUGESE) — líder absoluto del mercado",
       fort: "Única con garantía del Estado. Mayor red de talleres del país. Solidez financiera comprobada.",
       cons: "Procesos de reclamo más lentos por volumen. Menor flexibilidad comercial vs privadas.",
@@ -91,7 +91,7 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
       exclH: ["Daños por negligencia del asegurado","Robo sin evidencia de fuerza o violencia","Bienes de terceros en la propiedad"],
     },
     ASSA: {
-      cal: "AA- (SCR Moody's Local CR, 2025)",
+      cal: "AAA.cr (Moody's Local, Sep 2025) · AAA(CR) Estable (SCR) · ISC: cumple regulatorio (dato no publicado por aseguradora)",
       part: "Segunda aseguradora más grande en seguros generales de CR (SUGESE 2025). Grupo regional con presencia en Centroamérica.",
       fort: "3 planes diferenciados. App ASSAMóvil 24/7. Red de talleres propios.",
       cons: "Plan Económico tiene RC Daños a Terceros de solo ₡25M vs ₡100M en Platino. Verificar siempre.",
@@ -99,7 +99,7 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
       exclH: ["Objetos de valor no declarados explícitamente","Construcciones no autorizadas","Inundaciones por negligencia en drenajes"],
     },
     MNK: {
-      cal: "Calificación SCR no publicada — solicitar estados financieros si el cliente lo requiere",
+      cal: "BBB+.cr (Moody's Local, Jul 2025) · ⚠️ Pérdidas acumuladas: 44% sobre capital social a Jun 2025 — bajo seguimiento",
       part: "Aseguradora privada en crecimiento sostenido. Primer Centro de Servicios propio de una aseguradora en CR (2025).",
       fort: "LUC simplifica RC. RC Alcohol incluida. Multiasistencia completa. Centro de Servicios propio.",
       cons: "Sin calificación SCR pública. Pérdidas parciales NO incluidas en plan Ahorro. Menor red talleres.",
@@ -107,7 +107,7 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
       exclH: ["Negligencia o mal mantenimiento del inmueble","Robo sin evidencia de fuerza","Objetos valiosos no declarados"],
     },
     Qualitas: {
-      cal: "Filial de Quálitas México (empresa pública en BMV). Sin calificación CR local.",
+      cal: "A+ (PCR Pacific Credit Rating, Dic 2024) · Filial de Quálitas México (empresa pública en BMV)",
       part: "Especializada exclusivamente en autos en CR. Crecimiento sostenido (SUGESE 2025).",
       fort: "Especialización total en autos — ventaja en velocidad de reclamos. Experiencia del grupo México.",
       cons: "Solo autos — no apto para consolidar seguros. Menor presencia en zonas rurales.",
@@ -115,12 +115,28 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
       exclH: [],
     },
     LAFISE: {
-      cal: "Grupo financiero regional en 9 países. Sin calificación CR publicada por SCR.",
+      cal: "Grupo financiero regional en 9 países. Sin calificación publicada por SCR a 2025 — solicitar ISC si cliente lo requiere",
       part: "En crecimiento en CR (SUGESE 2025). Mayor fortaleza en seguros comerciales e incendio.",
       fort: "Respaldo de grupo financiero regional. Buenas condiciones en comercial y pymes.",
       cons: "Menor presencia en autos. Verificar red de talleres en zona del cliente.",
       exclA: ["Vehículos mayores de 10 años pueden tener restricciones","Uso comercial no declarado"],
       exclH: ["Bienes sin inventario actualizado","Construcciones no autorizadas en la propiedad"],
+    },
+    Mapfre: {
+      cal: "CR AAA Estable (Pacific Credit Rating, Dic 2024) · Grupo MAPFRE cotiza en Bolsa de Madrid (IBEX 35)",
+      part: "4.6% participación mercado CR (Mar 2025, SUGESE). Presencia en Vida, Autos, Generales y Salud.",
+      fort: "Respaldo de grupo asegurador global con presencia en 40 países. Ratio combinado 95.4% (eficiencia operativa). Calificación máxima CR.",
+      cons: "Planes modulares — verificar qué coberturas son incluidas vs opcionales en cada cotización.",
+      exclA: ["Accesorios y modificaciones no declaradas","Uso comercial del vehículo no declarado","Conductor habitual diferente al declarado"],
+      exclH: ["Bienes sin declarar en inventario","Daños por negligencia del asegurado","Construcciones no autorizadas"],
+    },
+    Davivienda: {
+      cal: "Sin calificación SCR publicada en CR a 2025. Respaldo del Grupo Bancolombia (banco más grande de Colombia).",
+      part: "Participación enfocada en hogar y comercial. Especialidad en seguros vinculados a créditos hipotecarios.",
+      fort: "Respaldo financiero de Grupo Bancolombia. Especialización en incendio hogar vinculado a hipotecas.",
+      cons: "Menor presencia en autos. Red de servicio más limitada que aseguradoras especializadas en CR.",
+      exclA: [],
+      exclH: ["Propiedades con más de 35 años de antigüedad pueden tener condiciones especiales","Bienes de alto valor no declarados explícitamente","Daños por negligencia en mantenimiento"],
     },
   };
   const tendencias = {
@@ -136,6 +152,8 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
     if (n.includes('mnk')) return 'MNK';
     if (n.includes('qualitas')||n.includes('qu\u00e1litas')) return 'Qualitas';
     if (n.includes('lafise')) return 'LAFISE';
+    if (n.includes('mapfre')) return 'Mapfre';
+    if (n.includes('davivienda')) return 'Davivienda';
     return null;
   }).filter(Boolean))];
   const row = (label, val, bg, border, labelColor) => (
