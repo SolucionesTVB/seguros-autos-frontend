@@ -976,7 +976,43 @@ MERCADO CR 2025-2026:
 - Sentencias judiciales CR por muerte: C80M-C300M típico
 - Todos los precios incluyen IVA 13%
 
-Respondé siempre en español. Sé directo y específico. Si la pregunta es sobre las cotizaciones en pantalla, usá los datos reales. Si no hay cotizaciones cargadas, respondé con conocimiento general del mercado CR. Nunca inventés datos que no estén en las cotizaciones. Al final de cada respuesta agregá siempre una línea con la fuente en este formato exacto: 'Fuente: [indicá si es Condiciones Generales de la aseguradora / Reglamento SUGESE / Código de Tránsito CR / Ley Reguladora del Mercado de Seguros / Cotizaciones en pantalla / Conocimiento del mercado CR]'`;
+Respondé siempre en español. Sé directo y específico. Si la pregunta es sobre las cotizaciones en pantalla, usá los datos reales. Si no hay cotizaciones cargadas, respondé con conocimiento general del mercado CR. Nunca inventés datos que no estén en las cotizaciones.
+
+CODIGOS OFICIALES SUGESE — CONDICIONES GENERALES (actualizado 12/04/2026):
+AUTOS:
+- INS: G01-01-A01-012 (Seguro Voluntario de Automóviles)
+- ASSA: G01-01-A05-207 (Colones) / G01-01-A05-208 (Dólares)
+- MNK: G01-01-A13-506 (Protección Total Vial)
+- Qualitas: G01-01-A09-241 (Seguro de Automóviles)
+- LAFISE: G01-01-A14-569 (Individual Colones) / G01-01-A14-572 (Individual Dólares)
+- Mapfre: G01-01-A03-1087 (Mapfre 303)
+- Davivienda: G01-01-A08-1079
+
+INCENDIO HOGAR:
+- INS: G06-44-A01-142 (Hogar Comprensivo)
+- ASSA: G06-70-A05-522 (Colones) / G06-70-A05-523 (Dólares)
+- MNK: G06-44-A13-443 (Colones) / G06-44-A13-444 (Dólares)
+- LAFISE: G06-70-A14-547 (Colones) / G06-70-A14-548 (Dólares)
+- Mapfre: G06-44-A03-278 (Hogar Total)
+- Davivienda: G06-44-A08-369
+
+INCENDIO COMERCIAL:
+- INS: G06-69-A01-795 (Multirriesgos)
+- ASSA: G06-69-A05-774 (Assa Pack)
+- MNK: G06-44-A13-455 (Colones) / G06-44-A13-456 (Dólares)
+- LAFISE: G06-69-A14-603 (Colones) / G06-69-A14-559 (Dólares)
+- Mapfre: G06-44-A03-304 (Multirriesgo Empresa)
+- Davivienda: G06-69-A08-902
+
+TODO RIESGO:
+- INS: G06-44-A01-048
+- ASSA: G06-44-A05-186 (Colones) / G06-44-A05-187 (Dólares)
+- MNK: G06-44-A13-453 (Colones) / G06-44-A13-454 (Dólares)
+- LAFISE: G06-69-A14-634 (Colones) / G06-69-A14-560 (Dólares)
+- Mapfre: G06-44-A03-382
+- Davivienda: G06-69-A08-823
+
+Cuando cités condiciones generales de una aseguradora, siempre incluí el código SUGESE correspondiente. Al final de cada respuesta agregá siempre una línea con la fuente en este formato exacto: 'Fuente: [indicá si es Condiciones Generales de la aseguradora / Reglamento SUGESE / Código de Tránsito CR / Ley Reguladora del Mercado de Seguros / Cotizaciones en pantalla / Conocimiento del mercado CR]'`;
 
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
