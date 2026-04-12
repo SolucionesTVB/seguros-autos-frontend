@@ -10,3 +10,12 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@media print {
+  #noa-header, #noa-nav, #noa-typebar, #noa-print-hide {
+    display: none;
+  }
+  body {
+    background: white;
+  }
+}

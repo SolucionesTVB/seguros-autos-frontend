@@ -376,7 +376,7 @@ export default function App() {
     try {
       const snap = await getDocs(collection(db, 'cotizaciones'));
       const docs = snap.docs.map(d=>({...d.data(),_id:d.id}))
-        .filter(d=>d.tipo===tipo)
+        .filter(d=>d.tipo===tipo && (esAdmin || d.corredor===corredor))
         .sort((a,b)=>{ const fa=a.fecha?.seconds||0; const fb=b.fecha?.seconds||0; return fb-fa; });
       if (docs.length>0) {
         const data = docs[0];
@@ -406,6 +406,10 @@ export default function App() {
   const [progreso, setProgreso] = useState(0);
   const [mensajeProceso, setMensajeProceso] = useState('');
   const [planAssa, setPlanAssa] = useState('Platino');
+  const CORREDORES = [{id:'TVB',nombre:'Tony Villalobos',admin:true},{id:'Hermann',nombre:'Hermann',admin:false}];
+  const [corredor, setCorredor] = useState(() => localStorage.getItem('noa_corredor') || null);
+  const seleccionarCorredor = (id) => { localStorage.setItem('noa_corredor',id); setCorredor(id); };
+  const esAdmin = corredor === 'TVB';
   const [chatMensajes, setChatMensajes] = useState([{rol:'noa',texto:'Hola, soy el Asesor NOA. Conocés las cotizaciones en pantalla y puedo ayudarte con preguntas sobre coberturas, exclusiones, uso del vehículo, comparaciones y más. ¿En qué te ayudo?'}]);
   const [chatInput, setChatInput] = useState('');
   const [chatCargando, setChatCargando] = useState(false);
@@ -1019,6 +1023,7 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
       try {
         await addDoc(collection(db, 'cotizaciones'), {
           tipo: tipoSeguro,
+          corredor: corredor||'TVB',
           cliente: cliente,
           cotizaciones: res,
           fecha: serverTimestamp()
@@ -1249,7 +1254,27 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
       )}
 
       {/* HEADER */}
-      <div style={s.hdr}>
+      {/* SELECTOR CORREDOR */}
+      {!corredor && (
+        <div style={{minHeight:'100vh',background:'#0A1628',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+          <div style={{maxWidth:'400px',width:'100%',textAlign:'center'}}>
+            <div style={{width:'64px',height:'64px',background:'#1D4ED8',borderRadius:'16px',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'800',color:'white',fontSize:'28px',margin:'0 auto 20px'}}>N</div>
+            <h1 style={{color:'white',fontSize:'24px',fontWeight:'800',marginBottom:'8px'}}>NOA Comparativos</h1>
+            <p style={{color:'#60A5FA',fontSize:'14px',marginBottom:'32px'}}>Seleccioná tu perfil para continuar</p>
+            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+              {CORREDORES.map(c => (
+                <button key={c.id} onClick={() => seleccionarCorredor(c.id)}
+                  style={{width:'100%',padding:'16px 20px',background:'#1E3A5F',border:'1px solid #2563EB',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <span>{c.nombre}</span>
+                  {c.admin && <span style={{background:'#2563EB',fontSize:'10px',padding:'3px 8px',borderRadius:'4px',fontWeight:'600'}}>Admin</span>}
+                </button>
+              ))}
+            </div>
+            <p style={{color:'#475569',fontSize:'11px',marginTop:'24px'}}>SolucionesTVB · NOA v1.0</p>
+          </div>
+        </div>
+      )}
+      {corredor && <div id="noa-header" style={s.hdr}>
         <div style={s.logo}>
           <div style={s.mark}>N</div>
           <div>
@@ -1261,18 +1286,21 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
           <span style={s.sugese}>SUGESE Lic 01-2030</span>
           <button style={{...s.btnNew, background:'#1E40AF', marginRight:'6px'}} onClick={() => cargarDesdeFirebase(tipoSeguro)}>☁️ Cargar último</button>
           <button style={s.btnNew} onClick={limpiar}>+ Nueva Cotización</button>
+          <button onClick={()=>{localStorage.removeItem('noa_corredor');setCorredor(null);}} style={{background:'none',border:'1px solid #1E3A5F',color:'#475569',padding:'6px 10px',borderRadius:'6px',fontSize:'10px',cursor:'pointer',marginLeft:'4px'}}>
+            👤 {corredor}
+          </button>
         </div>
-      </div>
+      </div>}
 
       {/* NAV */}
-      <div style={s.nav}>
+      <div id="noa-nav" style={s.nav}>
         {tabs.map(t => (
           <div key={t.id} style={s.navItem(tab===t.id)} onClick={() => setTab(t.id)}>{t.label}</div>
         ))}
       </div>
 
       {/* TIPOS */}
-      <div style={s.typebar}>
+      <div id="noa-typebar" style={s.typebar}>
         {tipos.map(t => (
           <button key={t.id} style={s.typeBtn(tipoSeguro===t.id)} onClick={() => {
             setTipoSeguro(t.id);
@@ -1598,9 +1626,9 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
               </div>
             ) : (
               <>
-                <div style={{display:'flex',gap:'10px',marginBottom:'20px',flexWrap:'wrap'}}>
+                <div id='noa-print-hide' style={{display:'flex',gap:'10px',marginBottom:'20px',flexWrap:'wrap'}}>
 
-                  <button onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',background:'#DC2626',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>
+                  <button onClick={() => { const hide = () => ['noa-header','noa-nav','noa-typebar','noa-print-hide'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';}); const show = () => ['noa-header','noa-nav','noa-typebar','noa-print-hide'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';}); window.addEventListener('beforeprint',hide,{once:true}); window.addEventListener('afterprint',show,{once:true}); hide(); setTimeout(()=>{window.print();},50); }} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',background:'#DC2626',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>
                     📄 Exportar PDF
                   </button>
                   <button onClick={whatsapp} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',background:'#25D366',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>
@@ -1918,8 +1946,6 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
             </div>
           </div>
         )}
-
-}
 
       </div>
     </div>
