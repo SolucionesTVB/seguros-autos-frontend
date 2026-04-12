@@ -369,7 +369,7 @@ const generarPDF = async (cotizaciones, cliente, tipoSeguro) => {
 };
 
 export default function App() {
-  const savedCliente = (() => { try { return JSON.parse(localStorage.getItem('noa_cliente')||'null'); } catch { return null; } })();
+  const savedCliente = (() => { const _c = localStorage.getItem('noa_corredor')||'TVB'; try { return JSON.parse(localStorage.getItem(`${_c}_noa_cliente`)||'null'); } catch { return null; } })();
   const [tipoSeguro, setTipoSeguro] = useState(localStorage.getItem('noa_tipo_seguro') || 'autos');
   // Cargar cotizaciones desde Firebase al iniciar
   const cargarDesdeFirebase = async (tipo) => {
@@ -384,8 +384,8 @@ export default function App() {
           setCotizaciones(data.cotizaciones);
           setMejor(data.cotizaciones[0]);
           if (data.cliente) setCliente(data.cliente);
-          localStorage.setItem(`noa_cots_${tipo}`, JSON.stringify(data.cotizaciones));
-          localStorage.setItem('noa_cliente', JSON.stringify(data.cliente||{}));
+          localStorage.setItem(lsKey(`noa_cots_${tipo}`), JSON.stringify(data.cotizaciones));
+          localStorage.setItem(lsKey('noa_cliente'), JSON.stringify(data.cliente||{}));
           setTab('comparativo');
           showToast('✅ Cotizaciones cargadas desde la nube');
         }
@@ -395,8 +395,10 @@ export default function App() {
     } catch(e) { console.error('Error cargando Firebase:', e); showToast('Error cargando desde la nube','error'); }
   };
 
-  const getCotsPorTipo = (tipo) => { try { return JSON.parse(localStorage.getItem(`noa_cots_${tipo}`)||'null'); } catch { return null; } };
-  const tipoInicial = localStorage.getItem('noa_tipo_seguro') || 'autos';
+  const _co = localStorage.getItem('noa_corredor')||'TVB';
+  const lsKey = (k) => `${_co}_${k}`;
+  const getCotsPorTipo = (tipo) => { try { return JSON.parse(localStorage.getItem(lsKey(`noa_cots_${tipo}`))||'null'); } catch { return null; } };
+  const tipoInicial = localStorage.getItem(lsKey('noa_tipo_seguro')) || 'autos';
   const savedCots = getCotsPorTipo(tipoInicial);
   const [tab, setTab] = useState(savedCots ? 'comparativo' : 'subir');
   const [archivos, setArchivos] = useState([]);
@@ -1018,7 +1020,7 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
     if (todasCotizaciones.length>0) {
       const res = todasCotizaciones.sort((a,b)=>b.score-a.score);
       setCotizaciones(res); setMejor(res[0]);
-      localStorage.setItem(`noa_cots_${tipoSeguro}`,JSON.stringify(res));
+      localStorage.setItem(lsKey(`noa_cots_${tipoSeguro}`),JSON.stringify(res));
       // Guardar en Firebase
       try {
         await addDoc(collection(db, 'cotizaciones'), {
@@ -1029,8 +1031,8 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
           fecha: serverTimestamp()
         });
       } catch(e) { console.error('Firebase error:', e); }
-      localStorage.setItem('noa_tipo_seguro',tipoSeguro);
-      localStorage.setItem('noa_cliente',JSON.stringify(cliente));
+      localStorage.setItem(lsKey('noa_tipo_seguro'),tipoSeguro);
+      localStorage.setItem(lsKey('noa_cliente'),JSON.stringify(cliente));
       showToast(`\u2705 ${res.length} plan(es) analizados con IA`);
     } else { showToast('No se pudo procesar ningún PDF','error'); }
     clearInterval(intervalo); setProcesando(false); setMensajeProceso(''); setTab('comparativo');
@@ -1040,7 +1042,7 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
     setArchivos([]); setCotizaciones([]); setMejor(null); setProgreso(0);
     setCliente({nombre:'',cedula:'',telefono:'',email:'',marca:'',modelo:'',ano:'',placa:'',valorComercial:''});
     setTab('subir');
-    localStorage.removeItem(`noa_cots_${tipoSeguro}`); localStorage.removeItem('noa_cliente'); localStorage.removeItem('noa_tipo_seguro');
+    localStorage.removeItem(lsKey(`noa_cots_${tipoSeguro}`)); localStorage.removeItem(lsKey('noa_cliente')); localStorage.removeItem(lsKey('noa_tipo_seguro'));
     setTipoSeguro('autos');
   };
 
@@ -1304,7 +1306,7 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
         {tipos.map(t => (
           <button key={t.id} style={s.typeBtn(tipoSeguro===t.id)} onClick={() => {
             setTipoSeguro(t.id);
-            localStorage.setItem('noa_tipo_seguro',t.id);
+            localStorage.setItem(lsKey('noa_tipo_seguro'),t.id);
             const cots = getCotsPorTipo(t.id);
             setCotizaciones(cots||[]);
             setMejor(cots?cots[0]:null);
@@ -1438,7 +1440,7 @@ Respondé siempre en español. Sé directo y específico. Si la pregunta es sobr
                 ))}
               </div>
             </div>
-            <button onClick={() => { localStorage.setItem('noa_cliente',JSON.stringify(cliente)); setTab('subir'); showToast('✅ Datos guardados'); }}
+            <button onClick={() => { localStorage.setItem(lsKey('noa_cliente'),JSON.stringify(cliente)); setTab('subir'); showToast('✅ Datos guardados'); }}
               style={{width:'100%',padding:'12px',background:'#2563EB',color:'white',border:'none',borderRadius:'10px',fontSize:'14px',fontWeight:'700',cursor:'pointer'}}>
               ✅ Guardar y continuar
             </button>
