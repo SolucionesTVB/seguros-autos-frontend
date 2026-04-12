@@ -388,6 +388,9 @@ export default function App() {
   const [progreso, setProgreso] = useState(0);
   const [mensajeProceso, setMensajeProceso] = useState('');
   const [planAssa, setPlanAssa] = useState('Platino');
+  const [chatMensajes, setChatMensajes] = useState([{rol:'noa',texto:'Hola, soy el Asesor NOA. Conocés las cotizaciones en pantalla y puedo ayudarte con preguntas sobre coberturas, exclusiones, uso del vehículo, comparaciones y más. ¿En qué te ayudo?'}]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatCargando, setChatCargando] = useState(false);
 
   const [toast, setToast] = useState(null);
   const [expandido, setExpandido] = useState({});
@@ -901,6 +904,78 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
     };
   };
 
+  const enviarChat = async () => {
+    if (!chatInput.trim() || chatCargando) return;
+    const pregunta = chatInput.trim();
+    setChatInput('');
+    setChatMensajes(prev => [...prev, {rol:'corredor',texto:pregunta}]);
+    setChatCargando(true);
+    try {
+      const contexto = cotizaciones.length > 0 ? JSON.stringify(cotizaciones.map(c => ({
+        aseguradora: c.aseguradora, plan: c.plan, prima: c.prima, moneda: c.moneda,
+        coberturas: c.coberturas, deducibles_por_cobertura: c.deducibles_por_cobertura,
+        exclusiones: c.exclusiones, analisis_ia: c.analisis_ia
+      })), null, 2) : 'No hay cotizaciones cargadas aún.';
+      const sistemaPrompt = `Sos el Asesor NOA — un experto corredor de seguros en Costa Rica con 20 años de experiencia. Respondés preguntas de corredores de seguros de forma directa, clara y profesional.
+
+COTIZACIONES ACTUALES EN PANTALLA:
+${contexto}
+
+CONOCIMIENTO CRITICO — SEGUROS AUTOS CR:
+USO VEHICULAR Y ASEGURABILIDAD:
+- Taxi y servicio público: NO se puede asegurar como vehículo personal. Requiere póliza de servicio público. Si el corredor lo asegura como personal el reclamo será rechazado.
+- Uber/DiDi/CABIFY: zona gris legal en CR. La mayoría de aseguradoras lo excluyen expresamente si se detecta uso para transporte remunerado. Verificar condiciones generales de cada aseguradora.
+- Uso mixto personal/trabajo (vendedor, visitas a clientes): generalmente cubierto como uso personal. NO aplica si se cobra por el transporte.
+- Vehículo de empresa asegurado a nombre personal: riesgo de rechazo si el accidente ocurre en horas de trabajo. Recomendar asegurarlo a nombre de la empresa.
+
+EXCLUSIONES CRITICAS MAS COMUNES EN CR:
+- Conducir bajo efectos de alcohol o drogas (sin cobertura RC alcohol específica)
+- Conductor sin licencia vigente o con puntos insuficientes
+- Vehículo con modificaciones no declaradas (lift, cambio de motor, etc.)
+- Uso comercial no declarado (taxi, delivery, transporte remunerado)
+- Daños en competencias o pruebas de velocidad
+- Deducible por colisión: si el costo del daño es menor al deducible, el asegurado paga todo
+- Infraseguro: si el valor declarado es menor al valor real, aplica regla proporcional en siniestros parciales
+- Vehículos con más de cierta antigüedad pueden tener restricciones en cobertura comprensiva
+
+CONDICIONES GENERALES POR ASEGURADORA:
+ASSA: Base de indemnización "valor real" puede significar depreciación según tablas propias. Beneficio taxi aeropuerto excluido para vehículos con más de 5 años. RC alcohol disponible como endoso.
+INS: Descuento por experiencia hasta -45% para historial limpio. Código 17N = exención de deducible disponible. Base "valor declarado" — verificar que coincida con mercado real.
+MNK: LUC (límite único combinado) para RC — mismo monto cubre personas y bienes. Sin cobertura de RC alcohol en plan estándar. Deducible mínimo en colisión.
+Qualitas: Especializado en autos. "Daños Materiales" incluye cristales. RC Complementaria como exceso. Sin cobertura de hogar o comercial.
+LAFISE: Cobertura estándar competitiva. Verificar extensión geográfica (Centroamérica).
+Mapfre: Planes modulares. Verificar qué coberturas están incluidas vs opcionales en cada plan.
+
+MERCADO CR 2025-2026:
+- Prima típica: 3.5%-7% del valor comercial según antigüedad y aseguradora
+- RC mínimo legal COSEVI: muy bajo — el mercado privado ofrece C50M-C400M/accidente
+- Sentencias judiciales CR por muerte: C80M-C300M típico
+- Todos los precios incluyen IVA 13%
+
+Respondé siempre en español. Sé directo y específico. Si la pregunta es sobre las cotizaciones en pantalla, usá los datos reales. Si no hay cotizaciones cargadas, respondé con conocimiento general del mercado CR. Nunca inventés datos que no estén en las cotizaciones. Al final de cada respuesta agregá siempre una línea con la fuente en este formato exacto: 'Fuente: [indicá si es Condiciones Generales de la aseguradora / Reglamento SUGESE / Código de Tránsito CR / Ley Reguladora del Mercado de Seguros / Cotizaciones en pantalla / Conocimiento del mercado CR]'`;
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','x-api-key':CLAUDE_KEY,
+          'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6', max_tokens: 1024,
+          system: sistemaPrompt,
+          messages: chatMensajes.filter(m=>m.rol!=='noa').map(m=>({
+            role: m.rol==='corredor'?'user':'assistant',
+            content: m.texto
+          })).concat([{role:'user',content:pregunta}])
+        })
+      });
+      const data = await resp.json();
+      const respuesta = data.content?.[0]?.text || 'No pude procesar la respuesta.';
+      setChatMensajes(prev => [...prev, {rol:'noa',texto:respuesta}]);
+    } catch(e) {
+      setChatMensajes(prev => [...prev, {rol:'noa',texto:'Error al conectar con el asesor. Intentá de nuevo.'}]);
+    }
+    setChatCargando(false);
+  };
+
   const procesar = async () => {
     if (archivos.length===0) { showToast('Seleccioná al menos un PDF','error'); return; }
     setProcesando(true); setProgreso(0); setMensajeProceso('');
@@ -959,7 +1034,7 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
     {id:'cliente',label:'📝 Cliente'},
     {id:'comparativo',label:'📊 Comparativo'},
     {id:'reporte',label:'📄 Reporte'},
-    {id:'roi',label:'💰 ROI'},
+    {id:'asesor',label:'🤖 Asesor NOA'},
   ];
 
   const tipos = [
@@ -1776,26 +1851,57 @@ Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (
         )}
 
         {/* ── ROI ── */}
-        {tab==='roi' && (
-          <div style={{background:'white',borderRadius:'16px',border:'1px solid #E2E8F0',padding:'32px'}}>
-            <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',marginBottom:'24px'}}>🧮 Calculadora de ROI</h2>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
-              {[
-                {bg:'#FEF2F2',border:'#FECACA',title:'❌ Sin la herramienta',color:'#DC2626',items:['2 horas por comparativo','4 clientes por día máximo','Errores manuales frecuentes','Reportes básicos sin impacto']},
-                {bg:'#F0FDF4',border:'#BBF7D0',title:'✅ Con NOA',color:'#16A34A',items:['5 minutos por comparativo','40+ clientes por día','Precisión 95%+ garantizada','Reportes profesionales automáticos']},
-                {bg:'#FFFBEB',border:'#FCD34D',title:'💰 Beneficio mensual',color:'#D97706',items:['3 clientes adicionales por día','₡4,950,000 en ingresos extra','Costo NOA: -₡150,000','Beneficio neto: ₡4,800,000/mes']},
-                {bg:'#F0F9FF',border:'#BAE6FD',title:'📈 Ventajas adicionales',color:'#0284C7',items:['Primera IA de seguros en Costa Rica','Ventaja competitiva 18+ meses','Exclusividad territorial','Posicionamiento como líder tech']},
-              ].map(({bg,border,title,color,items}) => (
-                <div key={title} style={{background:bg,border:`1px solid ${border}`,borderRadius:'12px',padding:'20px'}}>
-                  <p style={{fontWeight:'800',color,marginBottom:'12px',fontSize:'14px'}}>{title}</p>
-                  <ul style={{listStyle:'none',padding:0}}>
-                    {items.map(item => <li key={item} style={{fontSize:'13px',color:'#334155',marginBottom:'6px',lineHeight:'1.5'}}>• {item}</li>)}
-                  </ul>
-                </div>
+        {tab==='asesor' && (
+          <div style={{maxWidth:'800px',margin:'0 auto',padding:'24px 28px'}}>
+            <div style={{marginBottom:'20px'}}>
+              <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',margin:'0 0 4px'}}>🤖 Asesor NOA</h2>
+              <p style={{fontSize:'13px',color:'#64748B',margin:0}}>Experto en seguros CR — conoce las cotizaciones en pantalla y las condiciones generales de cada aseguradora.</p>
+            </div>
+            <div style={{background:'#0A1628',borderRadius:'16px',border:'1px solid #1E3A5F',overflow:'hidden',display:'flex',flexDirection:'column',height:'600px'}}>
+              <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:'12px'}}>
+                {chatMensajes.map((m,i) => (
+                  <div key={i} style={{display:'flex',justifyContent:m.rol==='corredor'?'flex-end':'flex-start'}}>
+                    {m.rol==='noa' && <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'#2563EB',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',flexShrink:0,marginRight:'8px',alignSelf:'flex-start'}}>🤖</div>}
+                    <div style={{maxWidth:'75%',padding:'12px 16px',borderRadius:m.rol==='corredor'?'16px 16px 4px 16px':'16px 16px 16px 4px',background:m.rol==='corredor'?'#2563EB':'#1E3A5F',color:'white',fontSize:'13px',lineHeight:'1.6',whiteSpace:'pre-wrap'}}>
+                      {m.texto}
+                    </div>
+                  </div>
+                ))}
+                {chatCargando && (
+                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                    <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'#2563EB',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px'}}>🤖</div>
+                    <div style={{background:'#1E3A5F',borderRadius:'16px 16px 16px 4px',padding:'12px 16px',display:'flex',gap:'6px',alignItems:'center'}}>
+                      <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0s'}}/>
+                      <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.2s'}}/>
+                      <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.4s'}}/>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div style={{padding:'16px 20px',borderTop:'1px solid #1E3A5F',display:'flex',gap:'10px',background:'#0D1F35'}}>
+                <input
+                  value={chatInput}
+                  onChange={e=>setChatInput(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&enviarChat()}
+                  placeholder='Preguntá sobre coberturas, exclusiones, uso del vehículo...'
+                  style={{flex:1,background:'#1E3A5F',border:'1px solid #2563EB',borderRadius:'10px',padding:'12px 16px',color:'white',fontSize:'13px',outline:'none'}}
+                />
+                <button onClick={enviarChat} disabled={chatCargando||!chatInput.trim()} style={{padding:'12px 20px',background:chatCargando||!chatInput.trim()?'#1E3A5F':'#2563EB',color:'white',border:'none',borderRadius:'10px',fontSize:'13px',fontWeight:'700',cursor:chatCargando||!chatInput.trim()?'default':'pointer',transition:'all 0.2s'}}>
+                  Enviar
+                </button>
+              </div>
+            </div>
+            <div style={{marginTop:'12px',display:'flex',gap:'8px',flexWrap:'wrap'}}>
+              {['¿Puedo asegurar un Uber como personal?','¿Qué pasa si choco sin licencia?','¿Cuál plan tiene mejor RC?','¿Qué cubre si viajo a Panamá?','Diferencia entre ASSA y MNK'].map(s=>(
+                <button key={s} onClick={()=>{setChatInput(s);}} style={{padding:'6px 12px',background:'#EFF6FF',border:'1px solid #BFDBFE',borderRadius:'20px',fontSize:'11px',color:'#1D4ED8',cursor:'pointer',fontWeight:'600'}}>
+                  {s}
+                </button>
               ))}
             </div>
           </div>
         )}
+
+}
 
       </div>
     </div>
