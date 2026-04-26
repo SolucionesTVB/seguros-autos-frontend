@@ -1503,16 +1503,16 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                       {(c.deducibles_por_cobertura||c.deducibles_por_riesgo||[]).length>0 && (
                         <div style={{padding:'12px 22px',borderBottom:'1px solid #F1F5F9',background:'#FAFAFA'}}>
                           <div style={{fontSize:'10px',fontWeight:'700',color:'#64748B',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'8px'}}>Deducibles por cobertura</div>
-                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'4px'}}>
+                          <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
                             {(c.deducibles_por_cobertura||c.deducibles_por_riesgo||[]).map((d,j) => {
                               const label = d.cobertura||d.riesgo||d.tipo_riesgo||'';
                               const rawVal = String(d.deducible||'');
                               const val = limpiarDeducible(rawVal.toLowerCase().includes('pecado')||rawVal==='0'?'Sin deducible':rawVal);
                               const esSin = (val||'').toLowerCase().includes('sin');
                               return (
-                                <div key={j} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:'11px'}}>
-                                  <span style={{color:'#64748B'}}>{label}</span>
-                                  <span style={{fontWeight:'600',color:esSin?'#16A34A':'#0F172A',marginLeft:'8px'}}>{val}</span>
+                                <div key={j} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 8px',borderRadius:'6px',background:'white',border:'1px solid #E2E8F0',fontSize:'11px'}}>
+                                  <span style={{color:'#334155',flex:1}}>{label}</span>
+                                  <span style={{fontWeight:'700',color:esSin?'#16A34A':'#0F172A',marginLeft:'12px',whiteSpace:'nowrap'}}>{val}</span>
                                 </div>
                               );
                             })}
@@ -1520,16 +1520,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                         </div>
                       )}
 
-                      {/* CRITERIO IA */}
-                      {c.analisis_ia?.alerta_corredor && (
-                        <div style={{padding:'10px 22px',borderBottom:'1px solid #F1F5F9',background:'#FFFBEB',display:'flex',alignItems:'flex-start',gap:'8px'}}>
-                          <span style={{fontSize:'14px',flexShrink:0}}>⚡</span>
-                          <div>
-                            <div style={{fontSize:'10px',fontWeight:'700',color:'#92400E',marginBottom:'2px'}}>Alerta antes de firmar</div>
-                            <div style={{fontSize:'12px',color:'#78350F',lineHeight:'1.5'}}>{c.analisis_ia.alerta_corredor}</div>
-                          </div>
-                        </div>
-                      )}
+                      {/* Alerta movida a Análisis NOA */}
 
                       {/* INTELIGENCIA DE MERCADO */}
                       {intel && (
