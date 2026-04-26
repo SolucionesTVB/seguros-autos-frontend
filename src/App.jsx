@@ -541,7 +541,7 @@ REGLAS CRITICAS:
     "gastos_legales_monto":numero o 0,
     "indemnizacion_deducible":numero o 0
   },
-  "deducibles_por_cobertura":[{"cobertura":"nombre","deducible":"Sin deducible / monto fijo / porcentaje minimo monto"}],
+  "deducibles_por_cobertura":[{"cobertura":"nombre","deducible":"SIN DEDUCIBLE / 300000 fijo por evento / 10% minimo 150000. CRITICO: la palabra es SIN (without en ingles) — NUNCA escribas Pecado"}],
   "beneficios_sin_costo":["descripcion con monto"],
   "exclusiones":["max 3 exclusiones criticas en lenguaje simple"],
   "documentos_para_reclamar":["max 3"],
@@ -807,7 +807,7 @@ Responde SOLO con el JSON array.`;
       method: 'POST',
       headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,
         'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8192,
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4096,
         messages:[{ role:'user', content:[
           { type:'document', source:{ type:'base64', media_type:'application/pdf', data:contenido } },
           { type:'text', text:prompt }
@@ -819,92 +819,8 @@ Responde SOLO con el JSON array.`;
     let texto = aiData.content[0].text.trim().replace(/```json/g,'').replace(/```/g,'').trim();
     const datosBase = JSON.parse(texto);
 
-    // LLAMADA 2 — Sonnet analiza profundo basado en datos reales
-    const promptSonnet = `Sos un experto corredor de seguros en Costa Rica con 20 años de experiencia y conocimiento profundo del mercado. Analiza estos datos REALES extraidos de una cotizacion de seguro de autos y genera un analisis profesional profundo.
-
-DATOS REALES DE LA COTIZACION:
-${JSON.stringify(Array.isArray(datosBase) ? datosBase : [datosBase], null, 2)}
-
-CONTEXTO REAL DEL MERCADO DE SEGUROS CR 2025-2026:
-PRIMAS TIPICAS AUTOS CR (con IVA):
-- Vehiculo hasta 5 anos: 3.5%-5.5% del valor comercial anual
-- Vehiculo 6-10 anos: 4%-6% del valor comercial anual
-- Vehiculo mas de 10 anos: 5%-7% del valor comercial anual
-
-RC PERSONAS — ESTANDAR MINIMO CR:
-- Por persona: RC legal minimo COSEVI es bajo — mercado privado ofrece C50M-C200M/persona
-- Por accidente: C100M-C400M es el rango competitivo del mercado privado
-- Sentencias judiciales CR por lesiones graves: C30M-C150M tipico, casos complejos C200M+
-- Sentencias por muerte en accidente: C80M-C300M segun dependientes economicos
-
-RC DANOS TERCEROS — ESTANDAR CR:
-- Mercado privado: C50M-C150M tipico para vehiculos personales
-- Accidentes en zonas urbanas San Jose pueden superar C50M en infraestructura
-
-EXCLUSIONES CRITICAS MAS COMUNES EN CR:
-- Conducir bajo efectos de alcohol o drogas (si no tiene cobertura RC alcohol)
-- Vehiculo con mas de 5 anos: perdida beneficio taxi aeropuerto en ASSA
-- Infraseguro: si valor declarado es menor al valor real de mercado, aplica regla proporcional
-- Caminos no pavimentados o lastrados: algunos planes excluyen danos en esas condiciones
-- Conductor sin licencia vigente o con puntos insuficientes
-
-COSTOS REALES DE SINIESTROS EN CR:
-- Reparacion colision menor (golpe): C150,000-C500,000
-- Reparacion colision moderada: C500,000-C2,000,000
-- Perdida total vehiculo C6M-C10M: reposicion real C7M-C12M en mercado actual
-- Hospitalizacion privada por accidente: C500,000-C5,000,000 por evento
-- Honorarios abogado defensa penal: C300,000-C2,000,000 por proceso
-
-REGLAS CRITICAS — SIN EXCEPCION:
-1. Usa SOLO los datos reales que ves arriba — NUNCA inventes coberturas, montos o caracteristicas que no esten en los datos
-2. Si una cobertura esta en los datos como true/false o tiene monto, usala exactamente
-3. Si algo no esta en los datos, NO lo menciones
-4. Compara entre los planes usando SOLO los montos reales que ves
-5. El analisis debe ser util para un corredor profesional — especifico, con numeros reales, accionable
-
-Para CADA plan en los datos genera un analisis_ia con estos campos OBLIGATORIOS:
-- recomendacion: 2-3 oraciones directas basadas en datos reales — por que este plan si o no
-- fortalezas: array de 2-4 puntos fuertes CON MONTOS REALES del JSON
-- debilidades: array de 2-3 limitaciones reales CON IMPACTO en colones reales
-- brecha_proteccion: que riesgo real queda desprotegido segun los datos — con costo estimado real en CR
-- alerta_corredor: UNA advertencia critica especifica y accionable basada en datos reales
-- perfil_si: para quien SI es ideal con razon concreta basada en coberturas reales
-- perfil_no: para quien NO es con razon concreta basada en limitaciones reales
-- vs_mercado: como se compara vs estandar CR para este tipo de vehiculo y precio
-- precio_valor: numero 1-10
-- puntuacion_cobertura: numero 1-10
-- puntuacion_servicio: numero 1-10
-
-Responde SOLO con un JSON array donde cada objeto tiene: "aseguradora", "plan" (igual a los datos originales), y "analisis_ia" con todos los campos anteriores.`;
-
-    const responseSonnet = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,
-        'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8192,
-        messages:[{ role:'user', content: promptSonnet }]
-      })
-    });
-    const sonnetData = await responseSonnet.json();
-    if (!sonnetData.content||!sonnetData.content[0]) { console.error('ERROR SONNET:', JSON.stringify(sonnetData)); }
-    else {
-      try {
-        let textoSonnet = sonnetData.content[0].text.trim().replace(/```json/g,'').replace(/```/g,'').trim();
-        textoSonnet = textoSonnet.replace(/¡/g,'₡').replace(/¢/g,'₡');
-        const analisis = JSON.parse(textoSonnet);
-        // Inyectar analisis_ia de Sonnet en cada plan de Haiku
-        const base = Array.isArray(datosBase) ? datosBase : [datosBase];
-        analisis.forEach(a => {
-          const match = base.find(b =>
-            (b.aseguradora||'').toLowerCase()===( a.aseguradora||'').toLowerCase() &&
-            (b.plan||'').toLowerCase()===(a.plan||'').toLowerCase()
-          );
-          if (match) match.analisis_ia = a.analisis_ia;
-        });
-      } catch(e) { console.error('Error parseando Sonnet:', e); }
-    }
-
     return datosBase;
+
   };
 
   const normalizarCotizacion = (c) => {
@@ -1041,8 +957,18 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
     setProcesando(true); setProgreso(0); setMensajeProceso('');
     const intervalo = null;
     const todasCotizaciones = [];
-    // Paralelo
-    const resultados = await Promise.allSettled(archivos.map(a => procesarUnPDF(a)));
+    const listos = [];
+    setMensajeProceso('Leyendo PDFs...');
+    // Paralelo con mensajes
+    const resultados = await Promise.allSettled(archivos.map(a => {
+      const nombre = a.name.replace(/\.pdf$/i,'').replace(/_/g,' ').toUpperCase();
+      return procesarUnPDF(a).then(r => {
+        listos.push(nombre);
+        setMensajeProceso('✅ ' + listos.join(' · ✅ ') + (listos.length < archivos.length ? ' · ⏳ Procesando...' : ''));
+        setProgreso(listos.length);
+        return r;
+      });
+    }));
     setProgreso(archivos.length);
     resultados.forEach((r,i) => {
       if (r.status==='fulfilled') {
@@ -1094,6 +1020,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
     {id:'subir',label:'📋 Subir'},
     {id:'cliente',label:'📝 Cliente'},
     {id:'comparativo',label:'📊 Comparativo'},
+    {id:'analisis',label:'🧠 Análisis NOA'},
     {id:'reporte',label:'📄 Reporte'},
     {id:'asesor',label:'🤖 Asesor NOA'},
   ];
@@ -1424,6 +1351,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                 <div style={{textAlign:'center',padding:'28px',background:'linear-gradient(135deg,#0A1628,#1E3A5F)',borderRadius:'16px',border:'1px solid #2563EB'}}>
                   <div style={{display:'flex',gap:'8px',justifyContent:'center',margin:'0 auto 16px'}}><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.2s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.4s'}}/></div>
                   <p style={{fontWeight:'800',color:'white',fontSize:'16px',marginBottom:'8px'}}>Analizando con IA NOA</p>
+                  {mensajeProceso && <p style={{fontSize:'12px',color:'#93C5FD',marginBottom:'8px',minHeight:'18px'}}>{mensajeProceso}</p>}
 
                   <div style={{background:'#1E3A5F',borderRadius:'8px',height:'8px',marginBottom:'8px'}}>
                     <div style={{background:'linear-gradient(90deg,#2563EB,#60A5FA)',height:'8px',borderRadius:'8px',width:`${Math.max(5,(progreso/Math.max(archivos.length,1))*100)}%`,transition:'width 0.8s ease'}}/>
@@ -1649,6 +1577,77 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                 })()}
 
               </>
+            )}
+          </div>
+        )}
+
+        {/* ── ANÁLISIS NOA ── */}
+        {tab==='analisis' && (
+          <div style={{background:'white',borderRadius:'16px',border:'1px solid #E2E8F0',padding:'24px'}}>
+            {!cotizaciones||cotizaciones.length===0 ? (
+              <div style={{textAlign:'center',padding:'64px'}}>
+                <div style={{fontSize:'48px',marginBottom:'12px'}}>🧠</div>
+                <p style={{color:'#94A3B8',fontWeight:'600'}}>Primero generá el comparativo</p>
+                <button onClick={() => setTab('subir')} style={{marginTop:'16px',padding:'10px 24px',background:'#2563EB',color:'white',border:'none',borderRadius:'10px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>Ir a Subir</button>
+              </div>
+            ) : (
+              <div>
+                <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',marginBottom:'4px'}}>🧠 Análisis NOA</h2>
+                <p style={{fontSize:'12px',color:'#64748B',marginBottom:'24px'}}>Análisis comparativo profundo · Uso exclusivo del corredor</p>
+
+                {/* SECCIÓN 1: Diferencias críticas */}
+                <div style={{background:'#F8FAFC',borderRadius:'12px',border:'1px solid #E2E8F0',padding:'20px',marginBottom:'16px'}}>
+                  <h3 style={{fontSize:'14px',fontWeight:'800',color:'#0F172A',marginBottom:'16px'}}>🔍 Diferencias críticas entre aseguradoras</h3>
+                  {cotizaciones.map((c,i) => (
+                    <div key={i} style={{borderLeft:'3px solid #2563EB',paddingLeft:'12px',marginBottom:'16px'}}>
+                      <div style={{fontWeight:'700',fontSize:'13px',color:'#1E40AF',marginBottom:'6px'}}>{c.aseguradora}{c.plan?' — '+c.plan:''}</div>
+                      <div style={{fontSize:'12px',color:'#334155',lineHeight:'1.6'}}>
+                        {c.coberturas?.rc_alcohol ? '✅ Incluye RC Alcohol' : '❌ No incluye RC Alcohol'}
+                        {' · '}
+                        {c.coberturas?.exencion_deducible ? '✅ Exención de deducible disponible' : ''}
+                        {c.coberturas?.multiasistencia ? '✅ Multiasistencia 24/7' : '❌ Sin multiasistencia'}
+                      </div>
+                      {c.analisis_ia?.brecha_proteccion && (
+                        <div style={{fontSize:'11px',color:'#DC2626',marginTop:'4px'}}>⚠️ {c.analisis_ia.brecha_proteccion}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* SECCIÓN 2: Alertas corredor */}
+                <div style={{background:'#FFF7ED',borderRadius:'12px',border:'1px solid #FED7AA',padding:'20px',marginBottom:'16px'}}>
+                  <h3 style={{fontSize:'14px',fontWeight:'800',color:'#9A3412',marginBottom:'16px'}}>⚠️ Alertas para el corredor</h3>
+                  {cotizaciones.map((c,i) => c.analisis_ia?.alerta_corredor ? (
+                    <div key={i} style={{marginBottom:'12px',paddingBottom:'12px',borderBottom:i<cotizaciones.length-1?'1px solid #FED7AA':'none'}}>
+                      <div style={{fontWeight:'700',fontSize:'12px',color:'#9A3412',marginBottom:'4px'}}>{c.aseguradora}</div>
+                      <div style={{fontSize:'12px',color:'#7C2D12'}}>{c.analisis_ia.alerta_corredor}</div>
+                    </div>
+                  ) : null)}
+                </div>
+
+                {/* SECCIÓN 3: Recomendación final */}
+                <div style={{background:'linear-gradient(135deg,#0A1628,#1E3A5F)',borderRadius:'12px',padding:'20px'}}>
+                  <h3 style={{fontSize:'14px',fontWeight:'800',color:'white',marginBottom:'16px'}}>🏆 Recomendación final NOA</h3>
+                  {mejor && (
+                    <div>
+                      <div style={{fontSize:'16px',fontWeight:'800',color:'#60A5FA',marginBottom:'8px'}}>{mejor.aseguradora}{mejor.plan?' — '+mejor.plan:''}</div>
+                      <div style={{fontSize:'12px',color:'#CBD5E1',lineHeight:'1.7'}}>{mejor.analisis_ia?.recomendacion}</div>
+                      {mejor.analisis_ia?.perfil_si && (
+                        <div style={{marginTop:'12px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',padding:'12px'}}>
+                          <div style={{fontSize:'11px',fontWeight:'700',color:'#34D399',marginBottom:'4px'}}>✅ IDEAL PARA</div>
+                          <div style={{fontSize:'12px',color:'#CBD5E1'}}>{mejor.analisis_ia.perfil_si}</div>
+                        </div>
+                      )}
+                      {mejor.analisis_ia?.perfil_no && (
+                        <div style={{marginTop:'8px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',padding:'12px'}}>
+                          <div style={{fontSize:'11px',fontWeight:'700',color:'#F87171',marginBottom:'4px'}}>❌ NO IDEAL PARA</div>
+                          <div style={{fontSize:'12px',color:'#CBD5E1'}}>{mejor.analisis_ia.perfil_no}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}
