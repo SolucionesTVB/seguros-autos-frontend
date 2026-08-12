@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+const handler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (!apiKey) { res.status(500).json({ error: 'API key no configurada' }); return; }
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) {} }
-  if (!body || !body.model) { res.status(400).json({ error: 'Body invalido', received: typeof req.body }); return; }
+  if (!body || !body.model) { res.status(400).json({ error: 'Body invalido', type: typeof req.body }); return; }
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -20,5 +20,6 @@ export default async function handler(req, res) {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
-export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
+};
+handler.config = { api: { bodyParser: { sizeLimit: '10mb' } } };
+module.exports = handler;
