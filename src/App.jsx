@@ -803,9 +803,9 @@ REGLAS CRITICAS:
 }]
 Responde SOLO con el JSON array.`;
     // LLAMADA 1 — Haiku extrae datos duros del PDF
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4096,
         messages:[{ role:'user', content:[
           { type:'document', source:{ type:'base64', media_type:'application/pdf', data:contenido } },
@@ -929,9 +929,9 @@ TODO RIESGO:
 
 Cuando cités condiciones generales de una aseguradora, siempre incluí el código SUGESE correspondiente. Al final de cada respuesta agregá siempre una línea con la fuente en este formato exacto: 'Fuente: [indicá si es Condiciones Generales de la aseguradora / Reglamento SUGESE / Código de Tránsito CR / Ley Reguladora del Mercado de Seguros / Cotizaciones en pantalla / Conocimiento del mercado CR]'`;
 
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('/api/claude', {
         method: 'POST',
-        headers: {'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           model: 'claude-sonnet-4-6', max_tokens: 1024,
           system: sistemaPrompt,
