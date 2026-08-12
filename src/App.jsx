@@ -803,9 +803,9 @@ REGLAS CRITICAS:
 }]
 Responde SOLO con el JSON array.`;
     // LLAMADA 1 — Haiku extrae datos duros del PDF
-    const response = await fetch('/api/claude', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4096,
         messages:[{ role:'user', content:[
           { type:'document', source:{ type:'base64', media_type:'application/pdf', data:contenido } },
@@ -931,7 +931,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
 
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body: JSON.stringify({
           model: 'claude-sonnet-4-6', max_tokens: 1024,
           system: sistemaPrompt,
