@@ -215,6 +215,69 @@ const IntelMercado = ({ tipoSeguro, cotizaciones }) => {
     </div>
   );
 };
+
+const generarPDFAnalisis = async (cotizaciones, mejor, tipoSeguro, corredor) => {
+  const { default: jsPDF } = await import('jspdf');
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const margin = 14; let y = 15;
+  const limpiar = (t) => (t||'').replace(/₡/g,'CRC ').replace(/¢/g,'CRC ').replace(/[^ -~]/g, c => ({'á':'a','é':'e','í':'i','ó':'o','ú':'u','ñ':'n','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N'}[c]||''));
+  const checkY = (n=20) => { if (y+n>275) { doc.addPage(); y=15; } };
+  doc.setFillColor(10,22,40); doc.rect(0,0,W,30,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('NOA - Analisis Comparativo', margin, 13);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Uso exclusivo del corredor - Documento confidencial', margin, 20);
+  doc.text('Generado el '+new Date().toLocaleDateString('es-CR')+' | Licencia SUGESE: Lic 01-2030', margin, 26);
+  y = 40;
+  checkY(15);
+  doc.setFillColor(37,99,235); doc.rect(margin-2,y-5,W-margin*2+4,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('1. DIFERENCIAS CRITICAS ENTRE ASEGURADORAS', margin, y+2); y+=12;
+  cotizaciones.forEach((c)=>{
+    checkY(30);
+    doc.setFillColor(248,250,252); doc.rect(margin-2,y-3,W-margin*2+4,6,'F');
+    doc.setTextColor(30,64,175); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(limpiar((c.aseguradora||'')+(c.plan?' - '+c.plan:'')),margin,y+1); y+=8;
+    const items=[];
+    if(c.coberturas?.rc_alcohol) items.push('SI incluye RC Alcohol'); else items.push('NO incluye RC Alcohol');
+    if(c.coberturas?.exencion_deducible) items.push('Exencion de deducible disponible');
+    if(c.coberturas?.multiasistencia) items.push('Multiasistencia 24/7'); else items.push('Sin multiasistencia');
+    doc.setTextColor(51,65,85); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    items.forEach(item=>{checkY(6); doc.text('- '+limpiar(item),margin+3,y); y+=5;});
+    if(c.analisis_ia?.brecha_proteccion){checkY(10); doc.setTextColor(220,38,38); const l=doc.splitTextToSize('RIESGO: '+limpiar(c.analisis_ia.brecha_proteccion),W-margin*2-5); doc.text(l,margin+3,y); y+=l.length*4+2;}
+    y+=4;
+  });
+  y+=4; checkY(15);
+  doc.setFillColor(154,52,18); doc.rect(margin-2,y-5,W-margin*2+4,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('2. ALERTAS CRITICAS ANTES DE FIRMAR', margin, y+2); y+=12;
+  cotizaciones.forEach((c)=>{
+    if(!c.analisis_ia?.alerta_corredor) return;
+    checkY(20);
+    doc.setTextColor(154,52,18); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(limpiar(c.aseguradora),margin,y); y+=5;
+    doc.setTextColor(124,45,18); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    const l=doc.splitTextToSize(limpiar(c.analisis_ia.alerta_corredor),W-margin*2-5);
+    doc.text(l,margin+3,y); y+=l.length*4+4;
+  });
+  if(mejor?.analisis_ia){
+    y+=4; checkY(15);
+    doc.setFillColor(10,22,40); doc.rect(margin-2,y-5,W-margin*2+4,10,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('3. RECOMENDACION FINAL NOA', margin, y+2); y+=12;
+    doc.setFillColor(15,23,42); doc.rect(margin-2,y-3,W-margin*2+4,8,'F');
+    doc.setTextColor(96,165,250); doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text(limpiar('Mejor opcion: '+(mejor.aseguradora||'')+(mejor.plan?' - '+mejor.plan:'')),margin,y+3); y+=11;
+    if(mejor.analisis_ia.recomendacion){checkY(15); doc.setTextColor(51,65,85); doc.setFontSize(8); doc.setFont('helvetica','normal'); const l=doc.splitTextToSize(limpiar(mejor.analisis_ia.recomendacion),W-margin*2); doc.text(l,margin,y); y+=l.length*4+6;}
+    const scores=[['Precio/Valor',mejor.analisis_ia.precio_valor],['Cobertura',mejor.analisis_ia.puntuacion_cobertura],['Servicio',mejor.analisis_ia.puntuacion_servicio]].filter(s=>s[1]);
+    checkY(20); const boxW=(W-margin*2)/scores.length;
+    scores.forEach(([label,val],i)=>{const bx=margin+i*boxW; doc.setFillColor(241,245,249); doc.rect(bx,y,boxW-2,16,'F'); doc.setTextColor(100,116,139); doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.text(label,bx+2,y+5); doc.setTextColor(37,99,235); doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.text(String(val)+'/10',bx+2,y+13);}); y+=20;
+  }
+  const tp=doc.internal.getNumberOfPages();
+  for(let p=1;p<=tp;p++){doc.setPage(p); doc.setFillColor(241,245,249); doc.rect(0,285,W,12,'F'); doc.setTextColor(148,163,184); doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.text('NOA | Analisis confidencial | SolucionesTVB',margin,291); doc.text('Pag '+p+' de '+tp,W-margin-20,291);}
+  doc.save('NOA-Analisis-'+tipoSeguro+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+};
+
 const generarPDF = async (cotizaciones, cliente, tipoSeguro) => {
   const { default: jsPDF } = await import('jspdf');
   const { default: html2canvas } = await import('html2canvas');
@@ -1582,8 +1645,13 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
               </div>
             ) : (
               <div>
-                <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',marginBottom:'4px'}}>🧠 Análisis NOA</h2>
-                <p style={{fontSize:'12px',color:'#64748B',marginBottom:'24px'}}>Análisis comparativo profundo · Uso exclusivo del corredor</p>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'24px'}}>
+                  <div>
+                    <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',marginBottom:'4px'}}>🧠 Análisis NOA</h2>
+                    <p style={{fontSize:'12px',color:'#64748B'}}>Análisis comparativo profundo · Uso exclusivo del corredor</p>
+                  </div>
+                  <button onClick={() => generarPDFAnalisis(cotizaciones, mejor, tipoSeguro, corredor)} style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 16px',background:'#DC2626',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer'}}>📄 Exportar PDF</button>
+                </div>
 
                 {/* SECCIÓN 1: Diferencias críticas */}
                 <div style={{background:'#F8FAFC',borderRadius:'12px',border:'1px solid #E2E8F0',padding:'20px',marginBottom:'16px'}}>
