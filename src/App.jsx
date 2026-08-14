@@ -1970,20 +1970,36 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                     </table>
                     </>}
                   </div>
+                  {/* NECESIDADES DEL CLIENTE - REQUISITO SUGESE */}
+                  <div style={{background:'#F8FAFC',borderRadius:'12px',border:'1px solid #E2E8F0',padding:'16px',marginBottom:'16px'}}>
+                    <p style={{fontSize:'11px',fontWeight:'700',color:'#64748B',textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:'10px'}}>📋 Necesidades del cliente documentadas</p>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+                      <p style={{fontSize:'11px',color:'#334155'}}>• Tipo de cobertura solicitada: <strong>Seguro de vehículo particular</strong></p>
+                      <p style={{fontSize:'11px',color:'#334155'}}>• Uso del vehículo: <strong>{cliente?.uso||'Personal'}</strong></p>
+                      <p style={{fontSize:'11px',color:'#334155'}}>• Presupuesto orientativo: <strong>Según propuestas presentadas</strong></p>
+                      <p style={{fontSize:'11px',color:'#334155'}}>• Coberturas prioritarias: <strong>RC, Colisión, Robo</strong></p>
+                    </div>
+                    <p style={{fontSize:'10px',color:'#94A3B8',marginTop:'8px'}}>Análisis comparativo elaborado conforme al Art. 25 Ley 8653 y Reglamento SUGESE 03-10</p>
+                  </div>
+
                   {/* FIRMAS */}
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'32px',borderTop:'1px solid #E2E8F0',paddingTop:'20px',marginBottom:'16px'}}>
-                    {[['Firma del Corredor Autorizado','Licencia SUGESE: Lic 01-2030'],['Recibido conforme — Cliente','Cédula: ___________________________']].map(([titulo,sub]) => (
-                      <div key={titulo}>
-                        <p style={{fontSize:'11px',color:'#94A3B8',marginBottom:'24px'}}>{titulo}</p>
-                        <div style={{borderBottom:'1px solid #94A3B8',marginBottom:'8px'}}/>
-                        <p style={{fontSize:'11px',color:'#64748B'}}>Nombre: ___________________________</p>
-                        <p style={{fontSize:'11px',color:'#64748B',marginTop:'4px'}}>{sub}</p>
-                      </div>
-                    ))}
+                    <div>
+                      <p style={{fontSize:'11px',color:'#94A3B8',marginBottom:'24px'}}>Firma del Corredor Autorizado</p>
+                      <div style={{borderBottom:'1px solid #94A3B8',marginBottom:'8px'}}/>
+                      <p style={{fontSize:'11px',color:'#64748B'}}>Nombre: {corredor==='TVB'?'Tony Villalobos Barrantes':corredor==='Hermann'?'Hermann Corredor':'___________________________'}</p>
+                      <p style={{fontSize:'11px',color:'#64748B',marginTop:'4px'}}>Licencia SUGESE: Lic 01-2030</p>
+                    </div>
+                    <div>
+                      <p style={{fontSize:'11px',color:'#94A3B8',marginBottom:'24px'}}>Recibido conforme — Cliente</p>
+                      <div style={{borderBottom:'1px solid #94A3B8',marginBottom:'8px'}}/>
+                      <p style={{fontSize:'11px',color:'#64748B'}}>Nombre: {cliente?.nombre||'___________________________'}</p>
+                      <p style={{fontSize:'11px',color:'#64748B',marginTop:'4px'}}>Cédula: {cliente?.cedula||'___________________________'}</p>
+                    </div>
                   </div>
                   <div style={{borderTop:'1px solid #E2E8F0',paddingTop:'12px',fontSize:'11px',color:'#94A3B8',lineHeight:'1.7'}}>
-                    <p>⚠️ <strong>Aviso legal:</strong> Cotización informativa, no constituye contrato de seguros. Vigencia 30 días. Registrados ante SUGESE.</p>
-                    <p>🏢 <strong>NOA Corredores de Seguros</strong> | Lic 01-2030 | Intermediario independiente autorizado</p>
+                    <p>⚠️ <strong>Aviso legal:</strong> Cotización informativa, no constituye contrato de seguros. Vigencia 30 días. Registrados ante SUGESE. Análisis comparativo elaborado conforme Ley 8653 Art. 25 y Reglamento SUGESE 03-10.</p>
+                    <p>🏢 <strong>NOA Corredores de Seguros</strong> | Lic 01-2030 | Intermediario independiente autorizado | vtonyb@gmail.com</p>
                   </div>
                 </div>
               </>
