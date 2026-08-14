@@ -1108,7 +1108,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
     nav: { background:'#0D1F35', display:'flex', padding:'0 28px', gap:'2px' },
     navItem: (on) => ({ padding:'13px 16px', fontSize:'12px', color: on?'#93C5FD':'#475569', borderBottom: on?'2px solid #3B82F6':'2px solid transparent', cursor:'pointer', fontWeight: on?'600':'500' }),
     // TYPES
-    typebar: { background:'#0D1F35', padding:'12px 28px', display:'flex', gap:'8px', borderBottom:'1px solid #1E3A5F', flexWrap:'wrap' },
+    typebar: { background:'#F1F5F9', padding:'12px 28px', display:'flex', gap:'8px', borderBottom:'1px solid #1E3A5F', flexWrap:'wrap' },
     typeBtn: (on) => ({ padding:'7px 16px', borderRadius:'8px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border: on?'1.5px solid #60A5FA':'1.5px solid #1E3A5F', background: on?'#1E3A5F':'transparent', color: on?'white':'#93C5FD' }),
     // BODY
     body: { padding:'24px 28px', maxWidth:'1200px', margin:'0 auto' },
@@ -1355,7 +1355,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
           return (
           <div style={{background:'white',borderRadius:'16px',border:'1px solid #E2E8F0',overflow:'hidden'}}>
             {/* Header del tipo */}
-            <div style={{background:'#0A1628',padding:'24px 28px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{background:'#F8FAFC',padding:'24px 28px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:'13px',color:'#475569',marginBottom:'4px',fontWeight:'500'}}>Procesando cotizaciones de</div>
                 <div style={{fontSize:'20px',fontWeight:'800',color:'white'}}>{info.emoji} {info.titulo}</div>
@@ -1368,7 +1368,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
             </div>
             <div style={{padding:'24px 28px',background:'#0D1F35'}}>
               {/* Zona de drop */}
-              <div style={{border:'2px dashed #1E3A5F',borderRadius:'12px',padding:'28px',textAlign:'center',background:'#0A1628',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
+              <div style={{border:'2px dashed #CBD5E1',borderRadius:'12px',padding:'28px',textAlign:'center',background:'#0A1628',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
                 onClick={() => document.getElementById('fu').click()}>
                 <input type="file" accept=".pdf" multiple id="fu" style={{display:'none'}}
                   onChange={e => setArchivos(Array.from(e.target.files).slice(0,5))} />
@@ -1396,7 +1396,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
               )}
               {/* Selector plan ASSA */}
               {tipoSeguro==='autos' && archivos.some(f => f.name.toLowerCase().includes('assa')) && (
-                <div style={{background:'#0A1628',border:'1px solid #2563EB',borderRadius:'12px',padding:'14px 16px',marginBottom:'16px'}}>
+                <div style={{background:'#EFF6FF',border:'1px solid #2563EB',borderRadius:'12px',padding:'14px 16px',marginBottom:'16px'}}>
                   <p style={{fontSize:'13px',fontWeight:'700',color:'#93C5FD',marginBottom:'8px'}}>🔶 ASSA detectada — ¿Qué plan querés analizar?</p>
                   <div style={{display:'flex',gap:'8px',marginBottom:'8px'}}>
                     {['Platino','Dorado','Económico'].map(p => (
