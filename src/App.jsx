@@ -1102,7 +1102,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
     mark: { width:'40px', height:'40px', background:'#1D4ED8', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'800', color:'white', fontSize:'16px' },
     brandName: { color:'white', fontSize:'18px', fontWeight:'800', letterSpacing:'-0.3px' },
     brandSub: { color:'#475569', fontSize:'10px', marginTop:'1px' },
-    sugese: { background:'#0F2444', color:'#60A5FA', border:'1px solid #1E3A5F', fontSize:'10px', padding:'5px 12px', borderRadius:'20px', fontWeight:'600' },
+    sugese: { background:'#0F2444', color:'#1D4ED8', border:'1px solid #1E3A5F', fontSize:'10px', padding:'5px 12px', borderRadius:'20px', fontWeight:'600' },
     btnNew: { background:'#2563EB', color:'white', border:'none', padding:'9px 18px', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer' },
     // NAV
     nav: { background:'#0D1F35', display:'flex', padding:'0 28px', gap:'2px' },
@@ -1291,7 +1291,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
             <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
               {CORREDORES.map(c => (
                 <button key={c.id} onClick={() => seleccionarCorredor(c.id)}
-                  style={{width:'100%',padding:'16px 20px',background:'#1E3A5F',border:'1px solid #2563EB',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  style={{width:'100%',padding:'16px 20px',background:'#EFF6FF',border:'1px solid #2563EB',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                   <span>{c.nombre}</span>
                   {c.admin && <span style={{background:'#2563EB',fontSize:'10px',padding:'3px 8px',borderRadius:'4px',fontWeight:'600'}}>Admin</span>}
                 </button>
@@ -1410,7 +1410,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
               )}
               {/* Botón procesar / spinner */}
               {procesando ? (
-                <div style={{textAlign:'center',padding:'28px',background:'linear-gradient(135deg,#0A1628,#1E3A5F)',borderRadius:'16px',border:'1px solid #2563EB'}}>
+                <div style={{textAlign:'center',padding:'28px',background:'#EFF6FF',borderRadius:'16px',border:'1px solid #BFDBFE'}}>
                   <div style={{display:'flex',gap:'8px',justifyContent:'center',margin:'0 auto 16px'}}><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.2s'}}/><div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#60A5FA',animation:'pulse 1.4s ease-in-out infinite',animationDelay:'0.4s'}}/></div>
                   <p style={{fontWeight:'800',color:'white',fontSize:'16px',marginBottom:'8px'}}>Analizando con IA NOA</p>
                   {mensajeProceso && <p style={{fontSize:'12px',color:'#93C5FD',marginBottom:'8px',minHeight:'18px'}}>{mensajeProceso}</p>}
@@ -2014,7 +2014,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
               <h2 style={{fontSize:'18px',fontWeight:'800',color:'#0F172A',margin:'0 0 4px'}}>🤖 Asesor NOA</h2>
               <p style={{fontSize:'13px',color:'#64748B',margin:0}}>Experto en seguros CR — conoce las cotizaciones en pantalla y las condiciones generales de cada aseguradora.</p>
             </div>
-            <div style={{background:'#0A1628',borderRadius:'16px',border:'1px solid #1E3A5F',overflow:'hidden',display:'flex',flexDirection:'column',height:'600px'}}>
+            <div style={{background:'#F8FAFC',borderRadius:'16px',border:'1px solid #E2E8F0',overflow:'hidden',display:'flex',flexDirection:'column',height:'600px'}}>
               <div style={{flex:1,overflowY:'auto',padding:'20px',display:'flex',flexDirection:'column',gap:'12px'}}>
                 {chatMensajes.map((m,i) => (
                   <div key={i} style={{display:'flex',justifyContent:m.rol==='corredor'?'flex-end':'flex-start'}}>
