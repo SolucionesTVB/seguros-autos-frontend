@@ -1358,7 +1358,7 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
             <div style={{background:'#F8FAFC',padding:'24px 28px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:'13px',color:'#475569',marginBottom:'4px',fontWeight:'500'}}>Procesando cotizaciones de</div>
-                <div style={{fontSize:'20px',fontWeight:'800',color:'white'}}>{info.emoji} {info.titulo}</div>
+                <div style={{fontSize:'20px',fontWeight:'800',color:'#0F172A'}}>{info.emoji} {info.titulo}</div>
               </div>
               <div style={{display:'flex',gap:'6px',flexWrap:'wrap',justifyContent:'flex-end',maxWidth:'50%'}}>
                 {info.aseguradoras.map(a => (
@@ -1366,9 +1366,9 @@ Cuando cités condiciones generales de una aseguradora, siempre incluí el códi
                 ))}
               </div>
             </div>
-            <div style={{padding:'24px 28px',background:'#0D1F35'}}>
+            <div style={{padding:'16px 20px',background:'#F8FAFC'}}>
               {/* Zona de drop */}
-              <div style={{border:'2px dashed #CBD5E1',borderRadius:'12px',padding:'28px',textAlign:'center',background:'#0A1628',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
+              <div style={{border:'2px dashed #CBD5E1',borderRadius:'12px',padding:'16px',textAlign:'center',background:'white',cursor:'pointer',marginBottom:'16px',transition:'all 0.2s'}}
                 onClick={() => document.getElementById('fu').click()}>
                 <input type="file" accept=".pdf" multiple id="fu" style={{display:'none'}}
                   onChange={e => setArchivos(Array.from(e.target.files).slice(0,5))} />
